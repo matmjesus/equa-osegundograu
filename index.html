@@ -1,1059 +1,647 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Classificador e Resolutor de Equações do 2º Grau</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classificador e Resolutor de Equações do 2º Grau</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- KaTeX CSS & JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Trava de tela para Notebook/Projetor sem rolagem global */
+    html, body {
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f1f5f9;
+      user-select: none;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
 
-    <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    /* Estilização das Caixas do Protótipo (Teal #136382) */
+    .prototype-box {
+      background-color: #136382;
+      border: 3px solid #083142;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px -5px rgba(19, 99, 130, 0.25);
+    }
 
-    <!-- KaTeX CSS & JS for LaTeX Rendering -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    /* Responsividade e fonte do KaTeX ampliada para Datashow */
+    .katex {
+      font-size: 1.75rem !important;
+      font-weight: 800 !important;
+      line-height: 1.25 !important;
+      color: #0f172a !important;
+    }
 
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    .katex-display {
+      margin: 0 !important;
+      padding: 2px 0 !important;
+    }
 
-    <!-- Canvas Confetti Library -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    /* Card da Solução (FUNDO CLARO E FONTE GRANDE) */
+    .sol-card .katex {
+      font-size: 1.55rem !important;
+      font-weight: 800 !important;
+      color: #0f172a !important;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+    /* Redução de 20% na fonte específica do Delta (1.55rem -> 1.24rem) */
+    [id^="sol-delta-"] .katex {
+      font-size: 1.24rem !important;
+    }
 
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-            color: #0f172a;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+    /* Card de Equação do Baralho */
+    .eq-card {
+      background-color: #ffffff;
+      border: 2px solid #083142;
+      border-radius: 18px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: grab;
+      touch-action: manipulation;
+    }
 
-        /* DESKTOP 100VH LOCK (NO WINDOW SCROLL ON NOTEBOOKS) */
-        @media (min-width: 768px) {
-            body {
-                overflow: hidden;
-            }
-        }
+    .eq-card:active {
+      cursor: grabbing;
+    }
 
-        /* TEAL CONTAINER BOXES (#136382, #083142 border, radius 24px) */
-        .teal-box {
-            background-color: #136382;
-            border: 3.5px solid #083142;
-            border-radius: 24px;
-            box-shadow: 0 8px 24px rgba(8, 49, 66, 0.2);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+    .eq-card.selected {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.4);
+      transform: scale(1.02);
+    }
 
-        .teal-box.drag-over {
-            background-color: #0c4a62 !important;
-            border-color: #38bdf8 !important;
-            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.45);
-            transform: scale(0.995);
-        }
+    /* Scrollbar personalizada para o contêiner de resoluções */
+    .custom-scroll::-webkit-scrollbar {
+      width: 7px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 10px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.7);
+    }
 
-        .teal-box.tap-target-active {
-            border-color: #f59e0b !important;
-            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.5);
-            animation: pulse-target 1.2s infinite ease-in-out;
-        }
-
-        @keyframes pulse-target {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.015); }
-        }
-
-        /* CUSTOM SCROLLBAR FOR OVERFLOW AREAS */
-        .custom-scroll::-webkit-scrollbar {
-            width: 5px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.35);
-            border-radius: 10px;
-        }
-
-        /* EQUATION CARDS */
-        .eq-card {
-            cursor: pointer;
-            transition: all 0.18s ease-out;
-            touch-action: manipulation;
-        }
-        .eq-card:active {
-            transform: scale(0.97);
-        }
-        .eq-card.selected-card {
-            border-color: #f59e0b !important;
-            background-color: #fffbeb !important;
-            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.45);
-            transform: translateY(-2px);
-        }
-        .eq-card.dragging {
-            opacity: 0.35;
-            transform: scale(0.95);
-        }
-
-        /* SHAKE ANIMATION FOR INCORRECT PLACEMENT */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-6px); }
-            40%, 80% { transform: translateX(6px); }
-        }
-        .shake-animation {
-            animation: shake 0.4s ease-in-out;
-        }
-
-        /* GLOW PULSE FOR READY NEXT BLOCK BUTTON */
-        @keyframes pulse-glow {
-            0%, 100% {
-                box-shadow: 0 0 12px rgba(245, 158, 11, 0.8), 0 0 24px rgba(245, 158, 11, 0.4);
-                transform: scale(1);
-            }
-            50% {
-                box-shadow: 0 0 20px rgba(245, 158, 11, 1), 0 0 35px rgba(245, 158, 11, 0.7);
-                transform: scale(1.04);
-            }
-        }
-        .btn-next-ready {
-            animation: pulse-glow 1.5s infinite ease-in-out;
-            background-color: #f59e0b !important;
-            color: #0f172a !important;
-            border-color: #d97706 !important;
-        }
-
-        /* RESPONSIVE KATEX OPTIMIZATION */
-        .katex {
-            font-size: 0.9em !important;
-        }
-        @media (max-width: 640px) {
-            .katex {
-                font-size: 0.82em !important;
-            }
-        }
-    </style>
+    /* Animação para o botão de próximo bloco */
+    @keyframes pulse-btn {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      50% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+    }
+    .btn-next-active {
+      animation: pulse-btn 2s infinite;
+      background-color: #16a34a !important;
+      cursor: pointer !important;
+    }
+  </style>
 </head>
-<body class="h-full flex flex-col justify-between p-2 sm:p-3 md:p-4">
+<body class="flex flex-col h-screen overflow-hidden text-slate-800">
 
-    <!-- TOP NAVBAR -->
-    <header class="bg-white border-2 border-slate-200/90 rounded-2xl px-3 sm:px-4 py-2 flex items-center justify-between shadow-sm shrink-0 mb-2.5 h-auto min-h-[52px]">
+  <!-- CABEÇALHO SUPERIOR FIXO -->
+  <header class="h-16 bg-slate-900 text-white px-4 flex items-center justify-between shrink-0 shadow-md">
+    <div class="flex items-center gap-3">
+      <div class="bg-amber-500 text-slate-950 font-black px-2.5 py-1 rounded-lg text-sm tracking-wider uppercase">
+        2º GRAU
+      </div>
+      <h1 class="text-lg font-bold tracking-tight hidden sm:block">Laboratório de Equações</h1>
+    </div>
+
+    <!-- Progresso do Bloco e Próximo Bloco -->
+    <div class="flex items-center gap-3">
+      <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 flex items-center gap-2">
+        <span class="text-xs uppercase font-bold text-slate-400">Bloco</span>
+        <span id="block-indicator" class="text-base font-black text-amber-400">1 de 5</span>
+      </div>
+
+      <button id="btn-next" onclick="nextBlock()" disabled 
+        class="bg-slate-700 text-slate-400 font-bold px-4 py-2 rounded-xl text-sm transition-all flex items-center gap-2 cursor-not-allowed">
+        <span>Próximo Bloco</span>
+        <span>➔</span>
+      </button>
+
+      <button onclick="openGithubModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl border border-slate-700 transition-colors" title="Como publicar no GitHub">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- NAVEGAÇÃO MOBILE (Tabs para celular) -->
+  <div class="md:hidden bg-slate-200 p-1 flex gap-1 border-b border-slate-300 shrink-0">
+    <button id="tab-deck" onclick="switchMobileTab('deck')" class="flex-1 py-2 font-bold text-xs rounded-lg bg-slate-900 text-white shadow-sm">
+      Baralho de Equações
+    </button>
+    <button id="tab-boxes" onclick="switchMobileTab('boxes')" class="flex-1 py-2 font-bold text-xs rounded-lg text-slate-700 hover:bg-slate-300">
+      Caixas de Destino
+    </button>
+  </div>
+
+  <!-- ÁREA DE TRABALHO PRINCIPAL (FIT 100vh) -->
+  <main class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 p-3 h-[calc(100vh-4rem)] overflow-hidden max-w-[1600px] mx-auto w-full">
+    
+    <!-- ESQUERDA: AS 3 CAIXAS DE DESTINO (Empilhadas na Vertical) -->
+    <section id="col-boxes" class="hidden md:flex md:col-span-4 lg:col-span-4 flex-col gap-2.5 h-full overflow-hidden">
+      
+      <!-- CAIXA 01: RAIZ QUADRADA -->
+      <div id="box-1" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'raiz')" onclick="handleBoxClick('raiz')"
+           class="prototype-box flex-1 flex flex-col p-3 text-white overflow-hidden relative group cursor-pointer border-2">
+        <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center gap-2">
+            <span class="bg-amber-400 text-slate-950 font-black text-xs px-2 py-0.5 rounded-full">01</span>
+            <h2 class="font-bold text-base tracking-wide">Raiz Quadrada</h2>
+          </div>
+          <span class="katex-header-badge text-xs bg-slate-900/60 px-2 py-0.5 rounded border border-white/20"></span>
+        </div>
+        <p class="text-[11px] text-slate-200 mb-2 leading-tight">Equações incompletas ($b=0$). Isola o termo quadrático e extrai $\pm\sqrt{k}$.</p>
+        <div id="content-box-1" class="flex-1 bg-black/20 rounded-xl p-2 custom-scroll overflow-y-auto space-y-2 border border-white/10 flex flex-col items-stretch justify-start">
+          <div class="placeholder-text text-xs text-slate-200 italic text-center my-auto py-2">
+            Arraste ou toque na equação e toque aqui
+          </div>
+        </div>
+      </div>
+
+      <!-- CAIXA 02: FATORAÇÃO -->
+      <div id="box-2" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'fatoracao')" onclick="handleBoxClick('fatoracao')"
+           class="prototype-box flex-1 flex flex-col p-3 text-white overflow-hidden relative group cursor-pointer border-2">
+        <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center gap-2">
+            <span class="bg-amber-400 text-slate-950 font-black text-xs px-2 py-0.5 rounded-full">02</span>
+            <h2 class="font-bold text-base tracking-wide">Fatoração</h2>
+          </div>
+          <span class="katex-header-badge text-xs bg-slate-900/60 px-2 py-0.5 rounded border border-white/20"></span>
+        </div>
+        <p class="text-[11px] text-slate-200 mb-2 leading-tight">Equações incompletas ($c=0$). Coloca $x$ em evidência: $x(ax+b)=0$.</p>
+        <div id="content-box-2" class="flex-1 bg-black/20 rounded-xl p-2 custom-scroll overflow-y-auto space-y-2 border border-white/10 flex flex-col items-stretch justify-start">
+          <div class="placeholder-text text-xs text-slate-200 italic text-center my-auto py-2">
+            Arraste ou toque na equação e toque aqui
+          </div>
+        </div>
+      </div>
+
+      <!-- CAIXA 03: BHASKARA -->
+      <div id="box-3" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'bhaskara')" onclick="handleBoxClick('bhaskara')"
+           class="prototype-box flex-1 flex flex-col p-3 text-white overflow-hidden relative group cursor-pointer border-2">
+        <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center gap-2">
+            <span class="bg-amber-400 text-slate-950 font-black text-xs px-2 py-0.5 rounded-full">03</span>
+            <h2 class="font-bold text-base tracking-wide">Fórmula de Bhaskara</h2>
+          </div>
+          <span class="katex-header-badge text-xs bg-slate-900/60 px-2 py-0.5 rounded border border-white/20"></span>
+        </div>
+        <p class="text-[11px] text-slate-200 mb-2 leading-tight">Equações completas ($a,b,c \neq 0$). Cálculo do $\Delta$ separado e fórmula geral.</p>
+        <div id="content-box-3" class="flex-1 bg-black/20 rounded-xl p-2 custom-scroll overflow-y-auto space-y-2 border border-white/10 flex flex-col items-stretch justify-start">
+          <div class="placeholder-text text-xs text-slate-200 italic text-center my-auto py-2">
+            Arraste ou toque na equação e toque aqui
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- DIREITA: O BARALHO DE EQUAÇÕES DA RODADA -->
+    <section id="col-deck" class="col-span-1 md:col-span-8 lg:col-span-8 prototype-box flex flex-col p-4 text-white overflow-hidden h-full">
+      <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/20">
+        <div>
+          <h2 class="font-black text-xl tracking-tight flex items-center gap-2">
+            <span>Baralho de Equações</span>
+            <span class="text-xs bg-amber-400 text-slate-950 px-2 py-0.5 rounded font-extrabold uppercase">Datashow Zoom Ready</span>
+          </h2>
+          <p class="text-xs text-slate-200">Arraste para as caixas ou toque na equação e na caixa correspondente.</p>
+        </div>
+        <div class="text-right">
+          <span id="remaining-count" class="text-2xl font-black text-amber-400">10</span>
+          <span class="text-[10px] uppercase font-bold text-slate-300 block">Restantes</span>
+        </div>
+      </div>
+
+      <!-- Container do Baralho (Grade com ROLAGEM INTERNA) -->
+      <div id="deck-container" class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 custom-scroll overflow-y-auto p-1">
+        <!-- Cards inseridos dinamicamente pelo JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL DE INSTRUÇÕES E GITHUB PAGES -->
+  <div id="github-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white text-slate-900 rounded-3xl p-6 max-w-lg w-full shadow-2xl border-2 border-slate-800">
+      <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
+        <h3 class="font-black text-xl text-slate-900 flex items-center gap-2">
+          🚀 Publicar no GitHub Pages
+        </h3>
+        <button onclick="closeGithubModal()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">✕</button>
+      </div>
+      <ol class="space-y-3 text-sm text-slate-700 font-medium list-decimal list-inside mb-6">
+        <li>Crie um repositório público no seu <b>GitHub</b>.</li>
+        <li>Faça o upload deste arquivo nomeado exatamente como <code>index.html</code>.</li>
+        <li>Vá em <b>Settings ➔ Pages</b> no seu repositório.</li>
+        <li>Em <i>Source</i>, selecione <b>Deploy from a branch</b> e escolha <code>main</code> / <code>root</code>.</li>
+        <li>Acesse o link gerado no seu celular e espelhe na TV/Datashow da sala de aula!</li>
+      </ol>
+      <button onclick="closeGithubModal()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition-colors">
+        Entendido, fechar!
+      </button>
+    </div>
+  </div>
+
+  <!-- SCRIPT COMPLETO DE LÓGICA DA APLICAÇÃO -->
+  <script>
+    // BASE DE DADOS: 5 BLOCOS COM 10 EQUAÇÕES CADA (50 EQUAÇÕES NO TOTAL)
+    const equationBlocks = [
+      // BLOCO 1
+      [
+        { id: 'b1_1', tex: 'x^2 - 16 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 16', 'x = \\pm \\sqrt{16}', 'S = \\{-4, 4\\}'] } },
+        { id: 'b1_2', tex: '2x^2 - 8x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(2x - 8) = 0', 'x_1 = 0 \\text{ ou } 2x - 8 = 0', 'S = \\{0, 4\\}'] } },
+        { id: 'b1_3', tex: 'x^2 - 5x + 6 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-5)^2 - 4(1)(6) = 25 - 24 = 1', formula: 'x = \\frac{-( -5 ) \\pm \\sqrt{1}}{2(1)}', roots: 'S = \\{2, 3\\}' } },
+        { id: 'b1_4', tex: '3x^2 - 27 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['3x^2 = 27 \\implies x^2 = 9', 'x = \\pm \\sqrt{9}', 'S = \\{-3, 3\\}'] } },
+        { id: 'b1_5', tex: 'x^2 + 7x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(x + 7) = 0', 'x_1 = 0 \\text{ ou } x + 7 = 0', 'S = \\{-7, 0\\}'] } },
+        { id: 'b1_6', tex: 'x^2 - 2x - 3 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-2)^2 - 4(1)(-3) = 4 + 12 = 16', formula: 'x = \\frac{2 \\pm 4}{2}', roots: 'S = \\{-1, 3\\}' } },
+        { id: 'b1_7', tex: 'x^2 - 25 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 25', 'x = \\pm \\sqrt{25}', 'S = \\{-5, 5\\}'] } },
+        { id: 'b1_8', tex: '5x^2 - 10x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(5x - 10) = 0', 'x_1 = 0 \\text{ ou } 5x - 10 = 0', 'S = \\{0, 2\\}'] } },
+        { id: 'b1_9', tex: 'x^2 - 4x + 4 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-4)^2 - 4(1)(4) = 16 - 16 = 0', formula: 'x = \\frac{4 \\pm 0}{2}', roots: 'S = \\{2\\}' } },
+        { id: 'b1_10', tex: '4x^2 - 64 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['4x^2 = 64 \\implies x^2 = 16', 'x = \\pm \\sqrt{16}', 'S = \\{-4, 4\\}'] } }
+      ],
+      // BLOCO 2
+      [
+        { id: 'b2_1', tex: 'x^2 - 49 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 49', 'x = \\pm \\sqrt{49}', 'S = \\{-7, 7\\}'] } },
+        { id: 'b2_2', tex: 'x^2 - 9x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(x - 9) = 0', 'x_1 = 0 \\text{ ou } x - 9 = 0', 'S = \\{0, 9\\}'] } },
+        { id: 'b2_3', tex: 'x^2 - 7x + 10 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-7)^2 - 4(1)(10) = 49 - 40 = 9', formula: 'x = \\frac{7 \\pm 3}{2}', roots: 'S = \\{2, 5\\}' } },
+        { id: 'b2_4', tex: '2x^2 - 50 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['2x^2 = 50 \\implies x^2 = 25', 'x = \\pm \\sqrt{25}', 'S = \\{-5, 5\\}'] } },
+        { id: 'b2_5', tex: '3x^2 + 12x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(3x + 12) = 0', 'x_1 = 0 \\text{ ou } 3x + 12 = 0', 'S = \\{-4, 0\\}'] } },
+        { id: 'b2_6', tex: 'x^2 - 6x + 8 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-6)^2 - 4(1)(8) = 36 - 32 = 4', formula: 'x = \\frac{6 \\pm 2}{2}', roots: 'S = \\{2, 4\\}' } },
+        { id: 'b2_7', tex: 'x^2 - 81 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 81', 'x = \\pm \\sqrt{81}', 'S = \\{-9, 9\\}'] } },
+        { id: 'b2_8', tex: '4x^2 - 12x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(4x - 12) = 0', 'x_1 = 0 \\text{ ou } 4x - 12 = 0', 'S = \\{0, 3\\}'] } },
+        { id: 'b2_9', tex: '2x^2 - 3x - 2 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-3)^2 - 4(2)(-2) = 9 + 16 = 25', formula: 'x = \\frac{3 \\pm 5}{4}', roots: 'S = \\{-1/2, 2\\}' } },
+        { id: 'b2_10', tex: 'x^2 - 100 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 100', 'x = \\pm \\sqrt{100}', 'S = \\{-10, 10\\}'] } }
+      ],
+      // BLOCO 3
+      [
+        { id: 'b3_1', tex: 'x^2 - 36 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 36', 'x = \\pm \\sqrt{36}', 'S = \\{-6, 6\\}'] } },
+        { id: 'b3_2', tex: 'x^2 - 11x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(x - 11) = 0', 'x_1 = 0 \\text{ ou } x - 11 = 0', 'S = \\{0, 11\\}'] } },
+        { id: 'b3_3', tex: 'x^2 - 8x + 12 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-8)^2 - 4(1)(12) = 64 - 48 = 16', formula: 'x = \\frac{8 \\pm 4}{2}', roots: 'S = \\{2, 6\\}' } },
+        { id: 'b3_4', tex: '5x^2 - 45 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['5x^2 = 45 \\implies x^2 = 9', 'x = \\pm 3', 'S = \\{-3, 3\\}'] } },
+        { id: 'b3_5', tex: '6x^2 - 18x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(6x - 18) = 0', 'x_1 = 0 \\text{ ou } 6x - 18 = 0', 'S = \\{0, 3\\}'] } },
+        { id: 'b3_6', tex: 'x^2 - 10x + 25 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-10)^2 - 4(1)(25) = 100 - 100 = 0', formula: 'x = \\frac{10 \\pm 0}{2}', roots: 'S = \\{5\\}' } },
+        { id: 'b3_7', tex: 'x^2 - 121 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 121', 'x = \\pm \\sqrt{121}', 'S = \\{-11, 11\\}'] } },
+        { id: 'b3_8', tex: '7x^2 + 14x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(7x + 14) = 0', 'x_1 = 0 \\text{ ou } 7x + 14 = 0', 'S = \\{-2, 0\\}'] } },
+        { id: 'b3_9', tex: 'x^2 - x - 6 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-1)^2 - 4(1)(-6) = 1 + 24 = 25', formula: 'x = \\frac{1 \\pm 5}{2}', roots: 'S = \\{-2, 3\\}' } },
+        { id: 'b3_10', tex: 'x^2 - 144 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 144', 'x = \\pm 12', 'S = \\{-12, 12\\}'] } }
+      ],
+      // BLOCO 4
+      [
+        { id: 'b4_1', tex: '2x^2 - 18 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['2x^2 = 18 \\implies x^2 = 9', 'x = \\pm 3', 'S = \\{-3, 3\\}'] } },
+        { id: 'b4_2', tex: 'x^2 + 15x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(x + 15) = 0', 'x_1 = 0 \\text{ ou } x + 15 = 0', 'S = \\{-15, 0\\}'] } },
+        { id: 'b4_3', tex: 'x^2 - 12x + 35 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-12)^2 - 4(1)(35) = 144 - 140 = 4', formula: 'x = \\frac{12 \\pm 2}{2}', roots: 'S = \\{5, 7\\}' } },
+        { id: 'b4_4', tex: 'x^2 - 1 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 1', 'x = \\pm 1', 'S = \\{-1, 1\\}'] } },
+        { id: 'b4_5', tex: '8x^2 - 32x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(8x - 32) = 0', 'x_1 = 0 \\text{ ou } 8x - 32 = 0', 'S = \\{0, 4\\}'] } },
+        { id: 'b4_6', tex: 'x^2 + 2x - 15 = 0', type: 'bhaskara', sol: { delta: '\\Delta = 2^2 - 4(1)(-15) = 4 + 60 = 64', formula: 'x = \\frac{-2 \\pm 8}{2}', roots: 'S = \\{-5, 3\\}' } },
+        { id: 'b4_7', tex: '3x^2 - 12 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['3x^2 = 12 \\implies x^2 = 4', 'x = \\pm 2', 'S = \\{-2, 2\\}'] } },
+        { id: 'b4_8', tex: 'x^2 - 20x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(x - 20) = 0', 'x_1 = 0 \\text{ ou } x - 20 = 0', 'S = \\{0, 20\\}'] } },
+        { id: 'b4_9', tex: '3x^2 - 7x + 2 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-7)^2 - 4(3)(2) = 49 - 24 = 25', formula: 'x = \\frac{7 \\pm 5}{6}', roots: 'S = \\{1/3, 2\\}' } },
+        { id: 'b4_10', tex: 'x^2 - 225 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 225', 'x = \\pm 15', 'S = \\{-15, 15\\}'] } }
+      ],
+      // BLOCO 5
+      [
+        { id: 'b5_1', tex: 'x^2 - 4 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 4', 'x = \\pm 2', 'S = \\{-2, 2\\}'] } },
+        { id: 'b5_2', tex: 'x^2 - 3x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(x - 3) = 0', 'x_1 = 0 \\text{ ou } x - 3 = 0', 'S = \\{0, 3\\}'] } },
+        { id: 'b5_3', tex: 'x^2 - 9x + 20 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-9)^2 - 4(1)(20) = 81 - 80 = 1', formula: 'x = \\frac{9 \\pm 1}{2}', roots: 'S = \\{4, 5\\}' } },
+        { id: 'b5_4', tex: '10x^2 - 1000 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['10x^2 = 1000 \\implies x^2 = 100', 'x = \\pm 10', 'S = \\{-10, 10\\}'] } },
+        { id: 'b5_5', tex: '10x^2 - 50x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(10x - 50) = 0', 'x_1 = 0 \\text{ ou } 10x - 50 = 0', 'S = \\{0, 5\\}'] } },
+        { id: 'b5_6', tex: 'x^2 + 5x + 6 = 0', type: 'bhaskara', sol: { delta: '\\Delta = 5^2 - 4(1)(6) = 25 - 24 = 1', formula: 'x = \\frac{-5 \\pm 1}{2}', roots: 'S = \\{-3, -2\\}' } },
+        { id: 'b5_7', tex: 'x^2 - 169 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 169', 'x = \\pm 13', 'S = \\{-13, 13\\}'] } },
+        { id: 'b5_8', tex: 'x^2 + x = 0', type: 'fatoracao', sol: { title: 'Fatoração por x', steps: ['x(x + 1) = 0', 'x_1 = 0 \\text{ ou } x + 1 = 0', 'S = \\{-1, 0\\}'] } },
+        { id: 'b5_9', tex: '2x^2 + 5x - 3 = 0', type: 'bhaskara', sol: { delta: '\\Delta = 5^2 - 4(2)(-3) = 25 + 24 = 49', formula: 'x = \\frac{-5 \\pm 7}{4}', roots: 'S = \\{-3, 1/2\\}' } },
+        { id: 'b5_10', tex: 'x^2 - 400 = 0', type: 'raiz', sol: { title: 'Isolamento de Raiz', steps: ['x^2 = 400', 'x = \\pm 20', 'S = \\{-20, 20\\}'] } }
+      ]
+    ];
+
+    // ESTADO DA APLICAÇÃO
+    let currentBlockIdx = 0;
+    let selectedEqId = null;
+    let placedCountInBlock = 0;
+
+    // SINTETIZADOR DE ÁUDIO WEB
+    function playSound(type) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'success') {
+          osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.25);
+        } else if (type === 'error') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(180, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.2);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.2);
+        }
+      } catch (e) {
+        console.log("Audio Web não inicializado.");
+      }
+    }
+
+    // INICIALIZAÇÃO DA APLICAÇÃO
+    window.addEventListener('DOMContentLoaded', () => {
+      renderHeaderBadges();
+      loadBlock(0);
+    });
+
+    // Renderiza KaTeX nos títulos das Caixas de Destino
+    function renderHeaderBadges() {
+      const boxBadges = document.querySelectorAll('.katex-header-badge');
+      if (boxBadges[0]) katex.render('b = 0', boxBadges[0]);
+      if (boxBadges[1]) katex.render('c = 0', boxBadges[1]);
+      if (boxBadges[2]) katex.render('a,b,c \\neq 0', boxBadges[2]);
+    }
+
+    // CARREGA UM BLOCO DE EQUAÇÕES
+    function loadBlock(blockIndex) {
+      currentBlockIdx = blockIndex;
+      selectedEqId = null;
+      placedCountInBlock = 0;
+
+      // Atualiza Indicador do Topo
+      document.getElementById('block-indicator').innerText = `${currentBlockIdx + 1} de ${equationBlocks.length}`;
+
+      // Reseta Botão Próximo
+      const btnNext = document.getElementById('btn-next');
+      btnNext.disabled = true;
+      btnNext.classList.remove('btn-next-active');
+      btnNext.classList.add('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
+
+      // Limpa as 3 Caixas de Destino
+      ['box-1', 'box-2', 'box-3'].forEach((boxId) => {
+        const boxContent = document.getElementById(`content-${boxId}`);
+        boxContent.innerHTML = `
+          <div class="placeholder-text text-xs text-slate-200 italic text-center my-auto py-2">
+            Arraste ou toque na equação e toque aqui
+          </div>`;
+      });
+
+      // Carrega o Baralho de Equações
+      const deckContainer = document.getElementById('deck-container');
+      deckContainer.innerHTML = '';
+
+      const equations = equationBlocks[currentBlockIdx];
+      document.getElementById('remaining-count').innerText = equations.length;
+
+      equations.forEach((eq) => {
+        const card = document.createElement('div');
+        card.id = `card-${eq.id}`;
+        card.draggable = true;
+        card.className = 'eq-card p-3 flex flex-col justify-between items-center bg-white shadow-md relative group select-none min-h-[90px]';
         
-        <!-- App Title & Logo -->
-        <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#136382] text-white flex items-center justify-center font-black text-sm sm:text-base shadow-md border border-[#083142] shrink-0">
-                <i class="fa-solid fa-square-root-variable"></i>
-            </div>
-            <div>
-                <h1 class="text-xs sm:text-sm font-extrabold text-slate-800 leading-tight">Classificador de Equações</h1>
-                <p class="text-[10px] sm:text-[11px] text-slate-500 font-medium hidden sm:block">Arraste ou toque para associar e resolver cada equação</p>
-            </div>
-        </div>
-
-        <!-- Block Controls & Stats -->
-        <div class="flex items-center gap-1.5 sm:gap-2.5">
-            
-            <!-- Block Indicator -->
-            <div class="bg-slate-100 border border-slate-200 px-2 sm:px-3 py-1 rounded-xl flex items-center gap-1.5">
-                <i class="fa-solid fa-layer-group text-[#136382] text-[10px] sm:text-xs"></i>
-                <span id="block-indicator" class="text-[11px] sm:text-xs font-extrabold text-slate-700">Bloco 1/5</span>
-            </div>
-
-            <!-- Accuracy Counter -->
-            <div class="bg-emerald-50 border border-emerald-200 px-2 sm:px-3 py-1 rounded-xl flex items-center gap-1 text-[11px] sm:text-xs font-extrabold text-emerald-700">
-                <i class="fa-solid fa-bullseye text-emerald-600 text-[10px] sm:text-xs"></i>
-                <span id="accuracy-counter">0/54</span>
-            </div>
-
-            <!-- GitHub Pages Guide Modal Button -->
-            <button onclick="openGithubModal()" title="Como publicar no GitHub Pages" class="w-7 h-7 sm:w-8 sm:h-8 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold border border-slate-700 transition-colors flex items-center justify-center">
-                <i class="fa-brands fa-github text-sm"></i>
-            </button>
-
-            <!-- Sound Toggle -->
-            <button id="btn-sound" onclick="toggleSound()" title="Ativar/Desativar Som" class="w-7 h-7 sm:w-8 sm:h-8 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold border border-slate-200 transition-colors flex items-center justify-center">
-                <i class="fa-solid fa-volume-high"></i>
-            </button>
-
-            <!-- Reset Block -->
-            <button onclick="resetCurrentBlock()" title="Reiniciar Bloco Atual" class="w-7 h-7 sm:w-8 sm:h-8 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold border border-slate-200 transition-colors flex items-center justify-center">
-                <i class="fa-solid fa-rotate-right"></i>
-            </button>
-
-            <!-- PROMINENT NEXT BLOCK BUTTON -->
-            <button id="btn-next-block" onclick="nextBlock()" disabled class="px-3 sm:px-4 py-1.5 bg-slate-200 text-slate-400 font-black rounded-xl text-xs transition-all flex items-center gap-1.5 border border-slate-300 cursor-not-allowed">
-                <span class="hidden sm:inline">Próximo Bloco</span>
-                <span class="sm:hidden">Próximo</span>
-                <i class="fa-solid fa-arrow-right text-[10px] sm:text-xs"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- MOBILE VIEW TABS SWITCHER (< 768px) -->
-    <div class="md:hidden flex bg-slate-200/80 p-1 rounded-2xl mb-2 gap-1 shrink-0 border border-slate-300/60">
-        <button id="tab-btn-pool" onclick="switchMobileTab('pool')" class="flex-1 py-1.5 rounded-xl font-bold text-xs transition-all text-center flex items-center justify-center gap-1.5 bg-white text-[#136382] shadow-sm">
-            <i class="fa-solid fa-list-check"></i>
-            <span>Equações (<span id="mobile-pool-count">0</span>)</span>
-        </button>
-        <button id="tab-btn-boxes" onclick="switchMobileTab('boxes')" class="flex-1 py-1.5 rounded-xl font-bold text-xs transition-all text-center flex items-center justify-center gap-1.5 text-slate-600">
-            <i class="fa-solid fa-boxes-stacked"></i>
-            <span>Caixas de Resolução</span>
-        </button>
-    </div>
-
-    <!-- MAIN WORKSPACE CONTAINER -->
-    <main class="flex-1 min-h-0 w-full flex flex-col md:flex-row gap-2.5 sm:gap-3 md:gap-4 overflow-y-auto md:overflow-hidden">
-
-        <!-- ERROR/INFO TOAST NOTIFICATION -->
-        <div id="toast-message" class="hidden fixed top-16 right-4 sm:right-6 z-50 bg-rose-600 text-white px-3.5 py-2 rounded-xl shadow-xl flex items-center gap-2 text-xs font-semibold backdrop-blur transition-all">
-            <i class="fa-solid fa-circle-exclamation text-sm shrink-0"></i>
-            <span id="toast-text">Esta equação não pertence a esta caixa!</span>
-        </div>
-
-        <!-- LEFT COLUMN: NARROW SIDEBAR ON DESKTOP (~240px-256px), TOGGLED ON MOBILE -->
-        <section id="section-boxes" class="hidden md:flex w-full md:w-60 lg:w-64 h-full flex-col gap-2 sm:gap-2.5 shrink-0 min-h-0">
-
-            <!-- CAIXA 01: RAIZ QUADRADA -->
-            <div id="zone-1" 
-                 class="teal-box flex-1 min-h-[140px] md:min-h-0 flex flex-col p-2.5 transition-all drop-zone"
-                 ondragover="handleDragOver(event)"
-                 ondragleave="handleDragLeave(event)"
-                 ondrop="handleDrop(event, 1)"
-                 onclick="handleZoneClick(1)">
-                
-                <div class="text-center pb-1 shrink-0 border-b border-white/15 flex flex-col items-center justify-center">
-                    <h2 class="text-white font-black text-xs sm:text-sm tracking-wide">Caixa 01</h2>
-                    <span class="text-[10px] font-semibold text-sky-200 bg-black/30 px-2 py-0.5 rounded-full border border-white/10 mt-0.5">Raiz Quadrada</span>
-                </div>
-
-                <div id="content-zone-1" class="flex-1 min-h-0 overflow-y-auto custom-scroll pt-2 flex flex-col gap-2">
-                    <!-- Solved Cards inserted dynamically -->
-                </div>
-            </div>
-
-            <!-- CAIXA 02: FATORAÇÃO -->
-            <div id="zone-2" 
-                 class="teal-box flex-1 min-h-[140px] md:min-h-0 flex flex-col p-2.5 transition-all drop-zone"
-                 ondragover="handleDragOver(event)"
-                 ondragleave="handleDragLeave(event)"
-                 ondrop="handleDrop(event, 2)"
-                 onclick="handleZoneClick(2)">
-                
-                <div class="text-center pb-1 shrink-0 border-b border-white/15 flex flex-col items-center justify-center">
-                    <h2 class="text-white font-black text-xs sm:text-sm tracking-wide">Caixa 02</h2>
-                    <span class="text-[10px] font-semibold text-sky-200 bg-black/30 px-2 py-0.5 rounded-full border border-white/10 mt-0.5">Fatoração (x em evidência)</span>
-                </div>
-
-                <div id="content-zone-2" class="flex-1 min-h-0 overflow-y-auto custom-scroll pt-2 flex flex-col gap-2">
-                    <!-- Solved Cards inserted dynamically -->
-                </div>
-            </div>
-
-            <!-- CAIXA 03: BHASKARA -->
-            <div id="zone-3" 
-                 class="teal-box flex-1 min-h-[140px] md:min-h-0 flex flex-col p-2.5 transition-all drop-zone"
-                 ondragover="handleDragOver(event)"
-                 ondragleave="handleDragLeave(event)"
-                 ondrop="handleDrop(event, 3)"
-                 onclick="handleZoneClick(3)">
-                
-                <div class="text-center pb-1 shrink-0 border-b border-white/15 flex flex-col items-center justify-center">
-                    <h2 class="text-white font-black text-xs sm:text-sm tracking-wide">Caixa 03</h2>
-                    <span class="text-[10px] font-semibold text-sky-200 bg-black/30 px-2 py-0.5 rounded-full border border-white/10 mt-0.5">Fórmula de Bhaskara</span>
-                </div>
-
-                <div id="content-zone-3" class="flex-1 min-h-0 overflow-y-auto custom-scroll pt-2 flex flex-col gap-2">
-                    <!-- Solved Cards inserted dynamically -->
-                </div>
-            </div>
-
-        </section>
-
-        <!-- RIGHT COLUMN: EXPANDED WIDE POOL PANEL ("EQUAÇÕES") -->
-        <section id="section-pool" class="w-full md:flex-1 h-full min-h-0 min-w-0 flex flex-col">
-            <div id="zone-pool" 
-                 class="teal-box h-full min-h-0 flex flex-col p-2.5 sm:p-3 md:p-4 transition-all drop-zone"
-                 ondragover="handleDragOver(event)"
-                 ondragleave="handleDragLeave(event)"
-                 ondrop="handleDrop(event, 'pool')"
-                 onclick="handleZoneClick('pool')">
-                
-                <div class="pb-2 shrink-0 border-b border-white/15 flex items-center justify-between px-1 sm:px-2">
-                    <div class="flex items-center gap-2">
-                        <h2 class="text-white font-black text-sm sm:text-base md:text-lg tracking-wide">Equações</h2>
-                        <span id="pool-counter" class="text-xs font-extrabold text-[#136382] bg-white px-2 py-0.5 rounded-full shadow-sm">0</span>
-                    </div>
-                    <span class="text-[11px] font-medium text-sky-100 italic opacity-90 hidden sm:inline">Toque em uma equação e depois na caixa de destino</span>
-                </div>
-
-                <!-- TAP INSTRUCTION BANNER FOR MOBILE -->
-                <div id="mobile-tap-instruction" class="hidden my-2 p-2 bg-amber-400/20 border border-amber-300/40 rounded-xl text-[11px] font-semibold text-amber-100 text-center flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-arrow-pointer text-amber-300"></i>
-                    <span>Equação selecionada! Agora toque na caixa desejada na outra aba.</span>
-                </div>
-
-                <!-- RESPONSIVE MULTI-COLUMN GRID FOR UNPLACED EQUATIONS -->
-                <div id="content-zone-pool" class="flex-1 min-h-0 overflow-y-auto custom-scroll pt-2.5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 content-start">
-                    <!-- Unplaced equation cards rendered here -->
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- GITHUB PAGES GUIDE MODAL -->
-    <div id="github-modal" class="hidden fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-        <div class="bg-white rounded-3xl p-5 sm:p-7 max-w-lg w-full shadow-2xl flex flex-col gap-4 border border-slate-100 max-h-[90vh] overflow-y-auto custom-scroll">
-            
-            <div class="flex items-center justify-between border-b pb-3 border-slate-100">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center text-xl shadow-md">
-                        <i class="fa-brands fa-github"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-base sm:text-lg font-black text-slate-900 leading-tight">Como Publicar no GitHub Pages</h2>
-                        <p class="text-[11px] text-slate-500 font-medium">Hospede este projeto gratuitamente em 3 minutos</p>
-                    </div>
-                </div>
-                <button onclick="closeGithubModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center transition-colors">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <div class="space-y-3 text-xs sm:text-sm text-slate-700">
-                <div class="flex gap-3 items-start p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                    <span class="w-6 h-6 rounded-full bg-[#136382] text-white font-black text-xs flex items-center justify-center shrink-0">1</span>
-                    <div>
-                        <strong class="text-slate-900 block font-bold">Crie um repositório no GitHub</strong>
-                        Acesse <a href="https://github.com/new" target="_blank" class="text-sky-600 font-semibold underline">github.com/new</a>, defina um nome (ex: <code class="bg-slate-200 px-1 rounded text-slate-800">equacoes-2grau</code>) e marque como <strong>Public</strong>.
-                    </div>
-                </div>
-
-                <div class="flex gap-3 items-start p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                    <span class="w-6 h-6 rounded-full bg-[#136382] text-white font-black text-xs flex items-center justify-center shrink-0">2</span>
-                    <div>
-                        <strong class="text-slate-900 block font-bold">Faça o upload do arquivo index.html</strong>
-                        Salve este código exatamente com o nome <code class="bg-slate-200 px-1.5 py-0.5 rounded font-mono text-slate-800">index.html</code>. Clique em <strong>"uploading an existing file"</strong> no GitHub e envie o arquivo.
-                    </div>
-                </div>
-
-                <div class="flex gap-3 items-start p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                    <span class="w-6 h-6 rounded-full bg-[#136382] text-white font-black text-xs flex items-center justify-center shrink-0">3</span>
-                    <div>
-                        <strong class="text-slate-900 block font-bold">Ative o GitHub Pages</strong>
-                        Vá em <strong>Settings</strong> ➔ <strong>Pages</strong> no seu repositório. Em <em>Branch</em>, escolha <strong>main</strong> (ou master) e clique em <strong>Save</strong>.
-                    </div>
-                </div>
-
-                <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 flex items-center gap-2.5">
-                    <i class="fa-solid fa-circle-check text-emerald-600 text-lg shrink-0"></i>
-                    <span class="text-xs font-semibold">Pronto! Seu site estará no ar em poucos segundos no endereço: <br><code class="text-emerald-900 font-mono underline font-bold">https://seu-usuario.github.io/nome-do-repositorio</code></span>
-                </div>
-            </div>
-
-            <button onclick="closeGithubModal()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-md transition-all text-xs">
-                Entendi, Fechar Guia
-            </button>
-        </div>
-    </div>
-
-    <!-- COMPLETION MODAL -->
-    <div id="completion-modal" class="hidden fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center flex flex-col items-center gap-4 border border-slate-100">
-            <div class="w-16 h-16 bg-[#136382] text-white rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-[#136382]/30 border border-[#083142]">
-                <i class="fa-solid fa-trophy"></i>
-            </div>
-            <h2 class="text-2xl font-black text-slate-900">Excelente Trabalho!</h2>
-            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Você concluiu com sucesso todos os <strong class="text-slate-800">5 blocos de exercícios</strong> de classificação e resolução de equações do segundo grau!
-            </p>
-            <div class="w-full bg-slate-50 rounded-2xl p-4 border border-slate-100 flex justify-around">
-                <div>
-                    <span class="block text-[11px] text-slate-400 font-semibold uppercase">Total Resolvido</span>
-                    <span id="modal-total-eqs" class="text-xl font-bold text-slate-800">54 / 54</span>
-                </div>
-                <div class="border-r border-slate-200"></div>
-                <div>
-                    <span class="block text-[11px] text-slate-400 font-semibold uppercase">Desempenho</span>
-                    <span id="modal-accuracy" class="text-xl font-bold text-emerald-600">100%</span>
-                </div>
-            </div>
-            <button onclick="restartGame()" class="w-full py-3 bg-[#136382] hover:bg-[#0e4e68] text-white font-bold rounded-xl shadow-lg transition-all text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-rotate-right"></i>
-                <span>Reiniciar Exercícios</span>
-            </button>
-        </div>
-    </div>
-
-    <script>
-        const BLOCKS_DATA = [
-            // ==================== BLOCO 1 (10 EQUAÇÕES) ====================
-            {
-                blockId: 1,
-                equations: [
-                    {
-                        id: "b1-e1", category: 1, latex: "x^2 - 16 = 0",
-                        steps: { isolate: "x^2 = 16", root: "x = \\pm \\sqrt{16}", calc: "x = \\pm 4", solution: "S = \\{-4, 4\\}" }
-                    },
-                    {
-                        id: "b1-e2", category: 1, latex: "x^2 - 36 = 0",
-                        steps: { isolate: "x^2 = 36", root: "x = \\pm \\sqrt{36}", calc: "x = \\pm 6", solution: "S = \\{-6, 6\\}" }
-                    },
-                    {
-                        id: "b1-e3", category: 1, latex: "2x^2 - 18 = 0",
-                        steps: { isolate: "2x^2 = 18 \\implies x^2 = 9", root: "x = \\pm \\sqrt{9}", calc: "x = \\pm 3", solution: "S = \\{-3, 3\\}" }
-                    },
-                    {
-                        id: "b1-e4", category: 2, latex: "x^2 - 5x = 0",
-                        steps: { factor: "x(x - 5) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad x - 5 = 0 \\implies x_2 = 5", solution: "S = \\{0, 5\\}" }
-                    },
-                    {
-                        id: "b1-e5", category: 2, latex: "x^2 + 7x = 0",
-                        steps: { factor: "x(x + 7) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad x + 7 = 0 \\implies x_2 = -7", solution: "S = \\{-7, 0\\}" }
-                    },
-                    {
-                        id: "b1-e6", category: 2, latex: "3x^2 - 12x = 0",
-                        steps: { factor: "x(3x - 12) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad 3x - 12 = 0 \\implies x_2 = 4", solution: "S = \\{0, 4\\}" }
-                    },
-                    {
-                        id: "b1-e7", category: 3, latex: "x^2 - 5x + 6 = 0",
-                        steps: { coefs: "a = 1, \\, b = -5, \\, c = 6", delta: "\\Delta = (-5)^2 - 4(1)(6) = 25 - 24 = 1", formula: "x = \\frac{-(-5) \\pm \\sqrt{1}}{2(1)} = \\frac{5 \\pm 1}{2}", roots: "x_1 = 3, \\, x_2 = 2", solution: "S = \\{2, 3\\}" }
-                    },
-                    {
-                        id: "b1-e8", category: 3, latex: "x^2 - 7x + 10 = 0",
-                        steps: { coefs: "a = 1, \\, b = -7, \\, c = 10", delta: "\\Delta = (-7)^2 - 4(1)(10) = 49 - 40 = 9", formula: "x = \\frac{-(-7) \\pm \\sqrt{9}}{2(1)} = \\frac{7 \\pm 3}{2}", roots: "x_1 = 5, \\, x_2 = 2", solution: "S = \\{2, 5\\}" }
-                    },
-                    {
-                        id: "b1-e9", category: 3, latex: "x^2 + 3x - 4 = 0",
-                        steps: { coefs: "a = 1, \\, b = 3, \\, c = -4", delta: "\\Delta = 3^2 - 4(1)(-4) = 9 + 16 = 25", formula: "x = \\frac{-3 \\pm \\sqrt{25}}{2(1)} = \\frac{-3 \\pm 5}{2}", roots: "x_1 = 1, \\, x_2 = -4", solution: "S = \\{-4, 1\\}" }
-                    },
-                    {
-                        id: "b1-e10", category: 3, latex: "x^2 - 2x - 8 = 0",
-                        steps: { coefs: "a = 1, \\, b = -2, \\, c = -8", delta: "\\Delta = (-2)^2 - 4(1)(-8) = 4 + 32 = 36", formula: "x = \\frac{-(-2) \\pm \\sqrt{36}}{2(1)} = \\frac{2 \\pm 6}{2}", roots: "x_1 = 4, \\, x_2 = -2", solution: "S = \\{-2, 4\\}" }
-                    }
-                ]
-            },
-
-            // ==================== BLOCO 2 (10 EQUAÇÕES) ====================
-            {
-                blockId: 2,
-                equations: [
-                    {
-                        id: "b2-e1", category: 1, latex: "x^2 - 64 = 0",
-                        steps: { isolate: "x^2 = 64", root: "x = \\pm \\sqrt{64}", calc: "x = \\pm 8", solution: "S = \\{-8, 8\\}" }
-                    },
-                    {
-                        id: "b2-e2", category: 1, latex: "x^2 - 100 = 0",
-                        steps: { isolate: "x^2 = 100", root: "x = \\pm \\sqrt{100}", calc: "x = \\pm 10", solution: "S = \\{-10, 10\\}" }
-                    },
-                    {
-                        id: "b2-e3", category: 1, latex: "5x^2 - 20 = 0",
-                        steps: { isolate: "5x^2 = 20 \\implies x^2 = 4", root: "x = \\pm \\sqrt{4}", calc: "x = \\pm 2", solution: "S = \\{-2, 2\\}" }
-                    },
-                    {
-                        id: "b2-e4", category: 2, latex: "x^2 - 9x = 0",
-                        steps: { factor: "x(x - 9) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad x - 9 = 0 \\implies x_2 = 9", solution: "S = \\{0, 9\\}" }
-                    },
-                    {
-                        id: "b2-e5", category: 2, latex: "x^2 + 4x = 0",
-                        steps: { factor: "x(x + 4) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad x + 4 = 0 \\implies x_2 = -4", solution: "S = \\{-4, 0\\}" }
-                    },
-                    {
-                        id: "b2-e6", category: 2, latex: "4x^2 + 16x = 0",
-                        steps: { factor: "x(4x + 16) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad 4x + 16 = 0 \\implies x_2 = -4", solution: "S = \\{-4, 0\\}" }
-                    },
-                    {
-                        id: "b2-e7", category: 3, latex: "x^2 - 6x + 5 = 0",
-                        steps: { coefs: "a = 1, \\, b = -6, \\, c = 5", delta: "\\Delta = (-6)^2 - 4(1)(5) = 36 - 20 = 16", formula: "x = \\frac{-(-6) \\pm \\sqrt{16}}{2(1)} = \\frac{6 \\pm 4}{2}", roots: "x_1 = 5, \\, x_2 = 1", solution: "S = \\{1, 5\\}" }
-                    },
-                    {
-                        id: "b2-e8", category: 3, latex: "x^2 - 4x - 12 = 0",
-                        steps: { coefs: "a = 1, \\, b = -4, \\, c = -12", delta: "\\Delta = (-4)^2 - 4(1)(-12) = 16 + 48 = 64", formula: "x = \\frac{-(-4) \\pm \\sqrt{64}}{2(1)} = \\frac{4 \\pm 8}{2}", roots: "x_1 = 6, \\, x_2 = -2", solution: "S = \\{-2, 6\\}" }
-                    },
-                    {
-                        id: "b2-e9", category: 3, latex: "x^2 + 5x + 6 = 0",
-                        steps: { coefs: "a = 1, \\, b = 5, \\, c = 6", delta: "\\Delta = 5^2 - 4(1)(6) = 25 - 24 = 1", formula: "x = \\frac{-5 \\pm \\sqrt{1}}{2(1)} = \\frac{-5 \\pm 1}{2}", roots: "x_1 = -2, \\, x_2 = -3", solution: "S = \\{-3, -2\\}" }
-                    },
-                    {
-                        id: "b2-e10", category: 3, latex: "x^2 - 8x + 15 = 0",
-                        steps: { coefs: "a = 1, \\, b = -8, \\, c = 15", delta: "\\Delta = (-8)^2 - 4(1)(15) = 64 - 60 = 4", formula: "x = \\frac{-(-8) \\pm \\sqrt{4}}{2(1)} = \\frac{8 \\pm 2}{2}", roots: "x_1 = 5, \\, x_2 = 3", solution: "S = \\{3, 5\\}" }
-                    }
-                ]
-            },
-
-            // ==================== BLOCO 3 (11 EQUAÇÕES) ====================
-            {
-                blockId: 3,
-                equations: [
-                    {
-                        id: "b3-e1", category: 1, latex: "x^2 - 49 = 0",
-                        steps: { isolate: "x^2 = 49", root: "x = \\pm \\sqrt{49}", calc: "x = \\pm 7", solution: "S = \\{-7, 7\\}" }
-                    },
-                    {
-                        id: "b3-e2", category: 1, latex: "x^2 - 121 = 0",
-                        steps: { isolate: "x^2 = 121", root: "x = \\pm \\sqrt{121}", calc: "x = \\pm 11", solution: "S = \\{-11, 11\\}" }
-                    },
-                    {
-                        id: "b3-e3", category: 1, latex: "3x^2 - 108 = 0",
-                        steps: { isolate: "3x^2 = 108 \\implies x^2 = 36", root: "x = \\pm \\sqrt{36}", calc: "x = \\pm 6", solution: "S = \\{-6, 6\\}" }
-                    },
-                    {
-                        id: "b3-e4", category: 2, latex: "x^2 - 11x = 0",
-                        steps: { factor: "x(x - 11) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad x - 11 = 0 \\implies x_2 = 11", solution: "S = \\{0, 11\\}" }
-                    },
-                    {
-                        id: "b3-e5", category: 2, latex: "x^2 + 8x = 0",
-                        steps: { factor: "x(x + 8) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad x + 8 = 0 \\implies x_2 = -8", solution: "S = \\{-8, 0\\}" }
-                    },
-                    {
-                        id: "b3-e6", category: 2, latex: "6x^2 - 24x = 0",
-                        steps: { factor: "x(6x - 24) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad 6x - 24 = 0 \\implies x_2 = 4", solution: "S = \\{0, 4\\}" }
-                    },
-                    {
-                        id: "b3-e7", category: 2, latex: "7x^2 + 14x = 0",
-                        steps: { factor: "x(7x + 14) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad 7x + 14 = 0 \\implies x_2 = -2", solution: "S = \\{-2, 0\\}" }
-                    },
-                    {
-                        id: "b3-e8", category: 3, latex: "x^2 - 9x + 18 = 0",
-                        steps: { coefs: "a = 1, \\, b = -9, \\, c = 18", delta: "\\Delta = (-9)^2 - 4(1)(18) = 81 - 72 = 9", formula: "x = \\frac{-(-9) \\pm \\sqrt{9}}{2(1)} = \\frac{9 \\pm 3}{2}", roots: "x_1 = 6, \\, x_2 = 3", solution: "S = \\{3, 6\\}" }
-                    },
-                    {
-                        id: "b3-e9", category: 3, latex: "x^2 + 2x - 8 = 0",
-                        steps: { coefs: "a = 1, \\, b = 2, \\, c = -8", delta: "\\Delta = 2^2 - 4(1)(-8) = 4 + 32 = 36", formula: "x = \\frac{-2 \\pm \\sqrt{36}}{2(1)} = \\frac{-2 \\pm 6}{2}", roots: "x_1 = 2, \\, x_2 = -4", solution: "S = \\{-4, 2\\}" }
-                    },
-                    {
-                        id: "b3-e10", category: 3, latex: "x^2 - 7x + 12 = 0",
-                        steps: { coefs: "a = 1, \\, b = -7, \\, c = 12", delta: "\\Delta = (-7)^2 - 4(1)(12) = 49 - 48 = 1", formula: "x = \\frac{-(-7) \\pm \\sqrt{1}}{2(1)} = \\frac{7 \\pm 1}{2}", roots: "x_1 = 4, \\, x_2 = 3", solution: "S = \\{3, 4\\}" }
-                    },
-                    {
-                        id: "b3-e11", category: 3, latex: "2x^2 - 7x + 3 = 0",
-                        steps: { coefs: "a = 2, \\, b = -7, \\, c = 3", delta: "\\Delta = (-7)^2 - 4(2)(3) = 49 - 24 = 25", formula: "x = \\frac{-(-7) \\pm \\sqrt{25}}{2(2)} = \\frac{7 \\pm 5}{4}", roots: "x_1 = 3, \\, x_2 = \\frac{1}{2}", solution: "S = \\{\\frac{1}{2}, 3\\}" }
-                    }
-                ]
-            },
-
-            // ==================== BLOCO 4 (11 EQUAÇÕES) ====================
-            {
-                blockId: 4,
-                equations: [
-                    {
-                        id: "b4-e1", category: 1, latex: "x^2 - 81 = 0",
-                        steps: { isolate: "x^2 = 81", root: "x = \\pm \\sqrt{81}", calc: "x = \\pm 9", solution: "S = \\{-9, 9\\}" }
-                    },
-                    {
-                        id: "b4-e2", category: 1, latex: "x^2 - 144 = 0",
-                        steps: { isolate: "x^2 = 144", root: "x = \\pm \\sqrt{144}", calc: "x = \\pm 12", solution: "S = \\{-12, 12\\}" }
-                    },
-                    {
-                        id: "b4-e3", category: 1, latex: "4x^2 - 100 = 0",
-                        steps: { isolate: "4x^2 = 100 \\implies x^2 = 25", root: "x = \\pm \\sqrt{25}", calc: "x = \\pm 5", solution: "S = \\{-5, 5\\}" }
-                    },
-                    {
-                        id: "b4-e4", category: 1, latex: "5x^2 - 80 = 0",
-                        steps: { isolate: "5x^2 = 80 \\implies x^2 = 16", root: "x = \\pm \\sqrt{16}", calc: "x = \\pm 4", solution: "S = \\{-4, 4\\}" }
-                    },
-                    {
-                        id: "b4-e5", category: 2, latex: "x^2 - 12x = 0",
-                        steps: { factor: "x(x - 12) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad x - 12 = 0 \\implies x_2 = 12", solution: "S = \\{0, 12\\}" }
-                    },
-                    {
-                        id: "b4-e6", category: 2, latex: "x^2 + 10x = 0",
-                        steps: { factor: "x(x + 10) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad x + 10 = 0 \\implies x_2 = -10", solution: "S = \\{-10, 0\\}" }
-                    },
-                    {
-                        id: "b4-e7", category: 2, latex: "8x^2 - 32x = 0",
-                        steps: { factor: "x(8x - 32) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad 8x - 32 = 0 \\implies x_2 = 4", solution: "S = \\{0, 4\\}" }
-                    },
-                    {
-                        id: "b4-e8", category: 3, latex: "x^2 - 10x + 21 = 0",
-                        steps: { coefs: "a = 1, \\, b = -10, \\, c = 21", delta: "\\Delta = (-10)^2 - 4(1)(21) = 100 - 84 = 16", formula: "x = \\frac{-(-10) \\pm \\sqrt{16}}{2(1)} = \\frac{10 \\pm 4}{2}", roots: "x_1 = 7, \\, x_2 = 3", solution: "S = \\{3, 7\\}" }
-                    },
-                    {
-                        id: "b4-e9", category: 3, latex: "x^2 + 4x - 5 = 0",
-                        steps: { coefs: "a = 1, \\, b = 4, \\, c = -5", delta: "\\Delta = 4^2 - 4(1)(-5) = 16 + 20 = 36", formula: "x = \\frac{-4 \\pm \\sqrt{36}}{2(1)} = \\frac{-4 \\pm 6}{2}", roots: "x_1 = 1, \\, x_2 = -5", solution: "S = \\{-5, 1\\}" }
-                    },
-                    {
-                        id: "b4-e10", category: 3, latex: "x^2 - 6x + 9 = 0",
-                        steps: { coefs: "a = 1, \\, b = -6, \\, c = 9", delta: "\\Delta = (-6)^2 - 4(1)(9) = 36 - 36 = 0", formula: "x = \\frac{-(-6) \\pm \\sqrt{0}}{2(1)} = \\frac{6}{2}", roots: "x_1 = x_2 = 3", solution: "S = \\{3\\}" }
-                    },
-                    {
-                        id: "b4-e11", category: 3, latex: "2x^2 - 5x + 2 = 0",
-                        steps: { coefs: "a = 2, \\, b = -5, \\, c = 2", delta: "\\Delta = (-5)^2 - 4(2)(2) = 25 - 16 = 9", formula: "x = \\frac{-(-5) \\pm \\sqrt{9}}{2(2)} = \\frac{5 \\pm 3}{4}", roots: "x_1 = 2, \\, x_2 = \\frac{1}{2}", solution: "S = \\{\\frac{1}{2}, 2\\}" }
-                    }
-                ]
-            },
-
-            // ==================== BLOCO 5 (12 EQUAÇÕES) ====================
-            {
-                blockId: 5,
-                equations: [
-                    {
-                        id: "b5-e1", category: 1, latex: "x^2 - 225 = 0",
-                        steps: { isolate: "x^2 = 225", root: "x = \\pm \\sqrt{225}", calc: "x = \\pm 15", solution: "S = \\{-15, 15\\}" }
-                    },
-                    {
-                        id: "b5-e2", category: 1, latex: "x^2 - 169 = 0",
-                        steps: { isolate: "x^2 = 169", root: "x = \\pm \\sqrt{169}", calc: "x = \\pm 13", solution: "S = \\{-13, 13\\}" }
-                    },
-                    {
-                        id: "b5-e3", category: 1, latex: "6x^2 - 54 = 0",
-                        steps: { isolate: "6x^2 = 54 \\implies x^2 = 9", root: "x = \\pm \\sqrt{9}", calc: "x = \\pm 3", solution: "S = \\{-3, 3\\}" }
-                    },
-                    {
-                        id: "b5-e4", category: 1, latex: "2x^2 - 50 = 0",
-                        steps: { isolate: "2x^2 = 50 \\implies x^2 = 25", root: "x = \\pm \\sqrt{25}", calc: "x = \\pm 5", solution: "S = \\{-5, 5\\}" }
-                    },
-                    {
-                        id: "b5-e5", category: 2, latex: "x^2 - 15x = 0",
-                        steps: { factor: "x(x - 15) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad x - 15 = 0 \\implies x_2 = 15", solution: "S = \\{0, 15\\}" }
-                    },
-                    {
-                        id: "b5-e6", category: 2, latex: "x^2 + 13x = 0",
-                        steps: { factor: "x(x + 13) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad x + 13 = 0 \\implies x_2 = -13", solution: "S = \\{-13, 0\\}" }
-                    },
-                    {
-                        id: "b5-e7", category: 2, latex: "10x^2 - 50x = 0",
-                        steps: { factor: "x(10x - 50) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad 10x - 50 = 0 \\implies x_2 = 5", solution: "S = \\{0, 5\\}" }
-                    },
-                    {
-                        id: "b5-e8", category: 2, latex: "4x^2 + 20x = 0",
-                        steps: { factor: "x(4x + 20) = 0", roots: "x_1 = 0 \\quad \\text{ou} \\quad 4x + 20 = 0 \\implies x_2 = -5", solution: "S = \\{-5, 0\\}" }
-                    },
-                    {
-                        id: "b5-e9", category: 3, latex: "x^2 - 11x + 28 = 0",
-                        steps: { coefs: "a = 1, \\, b = -11, \\, c = 28", delta: "\\Delta = (-11)^2 - 4(1)(28) = 121 - 112 = 9", formula: "x = \\frac{-(-11) \\pm \\sqrt{9}}{2(1)} = \\frac{11 \\pm 3}{2}", roots: "x_1 = 7, \\, x_2 = 4", solution: "S = \\{4, 7\\}" }
-                    },
-                    {
-                        id: "b5-e10", category: 3, latex: "x^2 + 6x - 16 = 0",
-                        steps: { coefs: "a = 1, \\, b = 6, \\, c = -16", delta: "\\Delta = 6^2 - 4(1)(-16) = 36 + 64 = 100", formula: "x = \\frac{-6 \\pm \\sqrt{100}}{2(1)} = \\frac{-6 \\pm 10}{2}", roots: "x_1 = 2, \\, x_2 = -8", solution: "S = \\{-8, 2\\}" }
-                    },
-                    {
-                        id: "b5-e11", category: 3, latex: "x^2 - 12x + 32 = 0",
-                        steps: { coefs: "a = 1, \\, b = -12, \\, c = 32", delta: "\\Delta = (-12)^2 - 4(1)(32) = 144 - 128 = 16", formula: "x = \\frac{-(-12) \\pm \\sqrt{16}}{2(1)} = \\frac{12 \\pm 4}{2}", roots: "x_1 = 8, \\, x_2 = 4", solution: "S = \\{4, 8\\}" }
-                    },
-                    {
-                        id: "b5-e12", category: 3, latex: "x^2 - 13x + 36 = 0",
-                        steps: { coefs: "a = 1, \\, b = -13, \\, c = 36", delta: "\\Delta = (-13)^2 - 4(1)(36) = 169 - 144 = 25", formula: "x = \\frac{-(-13) \\pm \\sqrt{25}}{2(1)} = \\frac{13 \\pm 5}{2}", roots: "x_1 = 9, \\, x_2 = 4", solution: "S = \\{4, 9\\}" }
-                    }
-                ]
-            }
-        ];
-
-        let currentBlockIndex = 0;
-        let activeBlockState = [];
-        let selectedCardId = null;
-        let soundEnabled = true;
-        let currentMobileTab = 'pool'; // 'pool' or 'boxes'
-
-        // WEB AUDIO API SYNTHESIZER
-        let audioCtx = null;
-
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-        }
-
-        function playSound(type) {
-            if (!soundEnabled) return;
-            initAudio();
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            if (type === 'success') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.16); // A5
-                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.2);
-            } else if (type === 'error') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(220, audioCtx.currentTime);
-                osc.frequency.setValueAtTime(160, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.2);
-            }
-        }
-
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            const btn = document.getElementById('btn-sound');
-            btn.innerHTML = soundEnabled ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark text-slate-400"></i>';
-        }
-
-        window.onload = function() {
-            loadBlock(0);
+        card.ondragstart = (e) => handleDragStart(e, eq.id);
+        card.onclick = (e) => {
+          e.stopPropagation();
+          selectCard(eq.id);
         };
 
-        function switchMobileTab(tab) {
-            currentMobileTab = tab;
-            const sectionPool = document.getElementById('section-pool');
-            const sectionBoxes = document.getElementById('section-boxes');
-            const btnPool = document.getElementById('tab-btn-pool');
-            const btnBoxes = document.getElementById('tab-btn-boxes');
+        // Header interno do Card
+        card.innerHTML = `
+          <div class="w-full flex justify-between items-center text-[10px] font-extrabold text-slate-400 tracking-wider uppercase mb-1">
+            <span>EQUAÇÃO</span>
+            <span class="text-slate-300 group-hover:text-slate-500">⠿ ARRASTE</span>
+          </div>
+          <div id="katex-eq-${eq.id}" class="my-auto text-center w-full overflow-x-auto py-1"></div>
+        `;
 
-            if (tab === 'pool') {
-                sectionPool.classList.remove('hidden');
-                sectionBoxes.classList.add('hidden');
-                sectionBoxes.classList.remove('flex');
+        deckContainer.appendChild(card);
 
-                btnPool.className = "flex-1 py-1.5 rounded-xl font-bold text-xs transition-all text-center flex items-center justify-center gap-1.5 bg-white text-[#136382] shadow-sm";
-                btnBoxes.className = "flex-1 py-1.5 rounded-xl font-bold text-xs transition-all text-center flex items-center justify-center gap-1.5 text-slate-600";
-            } else {
-                sectionPool.classList.add('hidden');
-                sectionBoxes.classList.remove('hidden');
-                sectionBoxes.classList.add('flex');
+        // Renderiza LaTeX no Card com tratamento de escala
+        const eqElem = document.getElementById(`katex-eq-${eq.id}`);
+        katex.render(eq.tex, eqElem, { displayMode: true, throwOnError: false });
+      });
+    }
 
-                btnBoxes.className = "flex-1 py-1.5 rounded-xl font-bold text-xs transition-all text-center flex items-center justify-center gap-1.5 bg-white text-[#136382] shadow-sm";
-                btnPool.className = "flex-1 py-1.5 rounded-xl font-bold text-xs transition-all text-center flex items-center justify-center gap-1.5 text-slate-600";
-            }
+    // SELEÇÃO POR CLIQUE/TOQUE (MOBILE E DATASHOW SELEÇÃO RÁPIDA)
+    function selectCard(eqId) {
+      if (selectedEqId === eqId) {
+        selectedEqId = null;
+        document.getElementById(`card-${eqId}`).classList.remove('selected');
+        return;
+      }
+
+      if (selectedEqId) {
+        const prev = document.getElementById(`card-${selectedEqId}`);
+        if (prev) prev.classList.remove('selected');
+      }
+
+      selectedEqId = eqId;
+      const current = document.getElementById(`card-${eqId}`);
+      if (current) current.classList.add('selected');
+    }
+
+    // DRAG AND DROP
+    function handleDragStart(e, eqId) {
+      e.dataTransfer.setData('text/plain', eqId);
+      selectCard(eqId);
+    }
+
+    function allowDrop(e) {
+      e.preventDefault();
+    }
+
+    function handleDrop(e, targetType) {
+      e.preventDefault();
+      const eqId = e.dataTransfer.getData('text/plain') || selectedEqId;
+      if (eqId) {
+        processClassification(eqId, targetType);
+      }
+    }
+
+    function handleBoxClick(targetType) {
+      if (selectedEqId) {
+        processClassification(selectedEqId, targetType);
+      }
+    }
+
+    // VERIFICAÇÃO E PROCESSAMENTO DA CLASSIFICAÇÃO
+    function processClassification(eqId, targetType) {
+      const eqData = equationBlocks[currentBlockIdx].find(item => item.id === eqId);
+      if (!eqData) return;
+
+      const targetBoxMap = { 'raiz': 'box-1', 'fatoracao': 'box-2', 'bhaskara': 'box-3' };
+      const targetBoxId = targetBoxMap[targetType];
+
+      if (eqData.type === targetType) {
+        // ACERTO!
+        playSound('success');
+        
+        // Remove card do baralho
+        const cardElem = document.getElementById(`card-${eqId}`);
+        if (cardElem) cardElem.remove();
+
+        // Renderiza a solução detalhada dentro da caixa (FUNDO CLARO)
+        renderSolutionCard(targetBoxId, eqData);
+
+        // Atualiza contadores
+        placedCountInBlock++;
+        selectedEqId = null;
+
+        const totalInBlock = equationBlocks[currentBlockIdx].length;
+        document.getElementById('remaining-count').innerText = totalInBlock - placedCountInBlock;
+
+        // Verifica se completou o Bloco
+        if (placedCountInBlock === totalInBlock) {
+          unlockNextBlock();
         }
 
-        function loadBlock(index) {
-            currentBlockIndex = index;
-            const blockData = BLOCKS_DATA[currentBlockIndex];
-            
-            activeBlockState = blockData.equations.map(eq => ({
-                ...eq,
-                currentZone: 'pool'
-            }));
+      } else {
+        // ERRO!
+        playSound('error');
+        const boxElem = document.getElementById(targetBoxId);
+        boxElem.classList.add('ring-4', 'ring-red-500');
+        setTimeout(() => boxElem.classList.remove('ring-4', 'ring-red-500'), 500);
+      }
+    }
 
-            selectedCardId = null;
-            renderUI();
+    // RENDERIZAÇÃO DA SOLUÇÃO PASSO A PASSO NA CAIXA (FUNDO CLARO E VISÍVEL)
+    function renderSolutionCard(boxId, eqData) {
+      const contentContainer = document.getElementById(`content-${boxId}`);
+      
+      // Remove o texto placeholder se existir
+      const placeholder = contentContainer.querySelector('.placeholder-text');
+      if (placeholder) placeholder.remove();
+
+      // Card da Solução com FUNDO CLARO (White / High Contrast)
+      const solDiv = document.createElement('div');
+      solDiv.className = 'sol-card w-full bg-white border-2 border-slate-800 rounded-2xl p-3.5 text-slate-900 shadow-xl text-left transition-all shrink-0 my-1';
+
+      // Header com a Equação
+      const header = document.createElement('div');
+      header.className = 'border-b-2 border-slate-200 pb-2 mb-2 font-black text-slate-900 text-base flex justify-between items-center';
+      header.innerHTML = `<span id="sol-eq-${eqData.id}"></span> <span class="text-xs text-emerald-800 font-extrabold bg-emerald-100 border-2 border-emerald-500 px-2 py-0.5 rounded-lg shadow-sm">✓ RESOLVIDO</span>`;
+      solDiv.appendChild(header);
+
+      const body = document.createElement('div');
+      body.className = 'space-y-2 text-sm font-bold text-slate-900';
+
+      if (eqData.type === 'bhaskara') {
+        // RESOLUÇÃO COM BLOCO DE DELTA SEPARADO E DESTACADO (Amarelo Claro)
+        const deltaBox = document.createElement('div');
+        deltaBox.className = 'bg-amber-100/90 border-2 border-amber-500 rounded-xl p-2.5 my-1 text-center shadow-sm';
+        deltaBox.innerHTML = `
+          <div class="text-xs text-amber-900 font-black uppercase tracking-wider mb-1">Cálculo do Delta (Δ)</div>
+          <div id="sol-delta-${eqData.id}" class="py-0.5"></div>
+        `;
+        body.appendChild(deltaBox);
+
+        const formDiv = document.createElement('div');
+        formDiv.className = 'text-center py-1 bg-slate-50 border border-slate-200 rounded-xl my-1';
+        formDiv.id = `sol-form-${eqData.id}`;
+        body.appendChild(formDiv);
+
+        const rootsDiv = document.createElement('div');
+        rootsDiv.className = 'text-center font-black text-emerald-950 py-1.5 bg-emerald-50 rounded-xl border-2 border-emerald-400 my-1';
+        rootsDiv.id = `sol-roots-${eqData.id}`;
+        body.appendChild(rootsDiv);
+
+      } else {
+        // RESOLUÇÃO PARA RAIZ QUADRADA E FATORAÇÃO
+        eqData.sol.steps.forEach((step, idx) => {
+          const isLast = (idx === eqData.sol.steps.length - 1);
+          const stepDiv = document.createElement('div');
+          stepDiv.className = isLast 
+            ? 'text-center font-black text-emerald-950 py-1.5 bg-emerald-50 rounded-xl border-2 border-emerald-400 mt-2' 
+            : 'text-center py-1 bg-slate-50 border border-slate-200 rounded-xl my-1';
+          stepDiv.id = `sol-step-${eqData.id}-${idx}`;
+          body.appendChild(stepDiv);
+        });
+      }
+
+      solDiv.appendChild(body);
+      contentContainer.appendChild(solDiv);
+
+      // Renderiza os KaTeX de forma assíncrona garantindo inserção no DOM
+      setTimeout(() => {
+        katex.render(eqData.tex, header.querySelector(`#sol-eq-${eqData.id}`), { throwOnError: false });
+
+        if (eqData.type === 'bhaskara') {
+          katex.render(eqData.sol.delta, body.querySelector(`#sol-delta-${eqData.id}`), { displayMode: true, throwOnError: false });
+          katex.render(eqData.sol.formula, body.querySelector(`#sol-form-${eqData.id}`), { displayMode: true, throwOnError: false });
+          katex.render(eqData.sol.roots, body.querySelector(`#sol-roots-${eqData.id}`), { displayMode: true, throwOnError: false });
+        } else {
+          eqData.sol.steps.forEach((step, idx) => {
+            katex.render(step, body.querySelector(`#sol-step-${eqData.id}-${idx}`), { displayMode: true, throwOnError: false });
+          });
         }
 
-        function resetCurrentBlock() {
-            loadBlock(currentBlockIndex);
-        }
+        // Rola automaticamente a caixa para a solução mais recente
+        contentContainer.scrollTop = contentContainer.scrollHeight;
+      }, 10);
+    }
 
-        function nextBlock() {
-            if (currentBlockIndex < BLOCKS_DATA.length - 1) {
-                loadBlock(currentBlockIndex + 1);
-            } else {
-                showCompletionModal();
-            }
-        }
+    // DESBLOQUEIA BOTÃO PRÓXIMO BLOCO
+    function unlockNextBlock() {
+      const btnNext = document.getElementById('btn-next');
+      btnNext.disabled = false;
+      btnNext.classList.remove('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
+      btnNext.classList.add('btn-next-active');
 
-        function restartGame() {
-            document.getElementById('completion-modal').classList.add('hidden');
-            loadBlock(0);
-        }
+      // Solta confetes de comemoração
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    }
 
-        function renderUI() {
-            const contentPool = document.getElementById('content-zone-pool');
-            const content1 = document.getElementById('content-zone-1');
-            const content2 = document.getElementById('content-zone-2');
-            const content3 = document.getElementById('content-zone-3');
+    // AVANÇA PARA O PRÓXIMO BLOCO
+    function nextBlock() {
+      if (currentBlockIdx < equationBlocks.length - 1) {
+        loadBlock(currentBlockIdx + 1);
+      } else {
+        // FIM DE TODOS OS BLOCOS
+        confetti({ particleCount: 200, spread: 100, origin: { y: 0.4 } });
+        alert('🎉 Parabéns! Você completou todos os 5 blocos de equações do 2º Grau!');
+        loadBlock(0);
+      }
+    }
 
-            contentPool.innerHTML = '';
-            content1.innerHTML = '';
-            content2.innerHTML = '';
-            content3.innerHTML = '';
+    // NAVEGAÇÃO ENTRE TABS MOBILE
+    function switchMobileTab(tab) {
+      const colBoxes = document.getElementById('col-boxes');
+      const colDeck = document.getElementById('col-deck');
+      const tabDeck = document.getElementById('tab-deck');
+      const tabBoxes = document.getElementById('tab-boxes');
 
-            let poolCount = 0;
-            let solvedInBlock = 0;
+      if (tab === 'deck') {
+        colDeck.classList.remove('hidden');
+        colBoxes.classList.add('hidden');
+        tabDeck.className = 'flex-1 py-2 font-bold text-xs rounded-lg bg-slate-900 text-white shadow-sm';
+        tabBoxes.className = 'flex-1 py-2 font-bold text-xs rounded-lg text-slate-700 hover:bg-slate-300';
+      } else {
+        colBoxes.classList.remove('hidden');
+        colDeck.classList.add('hidden');
+        tabBoxes.className = 'flex-1 py-2 font-bold text-xs rounded-lg bg-slate-900 text-white shadow-sm';
+        tabDeck.className = 'flex-1 py-2 font-bold text-xs rounded-lg text-slate-700 hover:bg-slate-300';
+      }
+    }
 
-            activeBlockState.forEach(item => {
-                if (item.currentZone === 'pool') {
-                    poolCount++;
-                    contentPool.appendChild(createUnplacedCard(item));
-                } else if (item.currentZone === 1) {
-                    solvedInBlock++;
-                    content1.appendChild(createSolvedCard(item, 1));
-                } else if (item.currentZone === 2) {
-                    solvedInBlock++;
-                    content2.appendChild(createSolvedCard(item, 2));
-                } else if (item.currentZone === 3) {
-                    solvedInBlock++;
-                    content3.appendChild(createSolvedCard(item, 3));
-                }
-            });
-
-            // Update global counters
-            let priorSolved = 0;
-            for (let i = 0; i < currentBlockIndex; i++) {
-                priorSolved += BLOCKS_DATA[i].equations.length;
-            }
-            let currentTotalSolved = priorSolved + solvedInBlock;
-            
-            let totalEqsAllBlocks = 0;
-            BLOCKS_DATA.forEach(b => totalEqsAllBlocks += b.equations.length);
-
-            document.getElementById('pool-counter').innerText = poolCount;
-            document.getElementById('mobile-pool-count').innerText = poolCount;
-            document.getElementById('accuracy-counter').innerText = `${currentTotalSolved}/${totalEqsAllBlocks}`;
-            document.getElementById('block-indicator').innerText = `Bloco ${currentBlockIndex + 1}/${BLOCKS_DATA.length}`;
-
-            // Mobile Tap Banner Indicator
-            const tapBanner = document.getElementById('mobile-tap-instruction');
-            if (selectedCardId && window.innerWidth < 768) {
-                tapBanner.classList.remove('hidden');
-            } else {
-                tapBanner.classList.add('hidden');
-            }
-
-            // Target highlight active box zones if a card is selected
-            [1, 2, 3].forEach(zoneNum => {
-                const zoneElem = document.getElementById(`zone-${zoneNum}`);
-                if (selectedCardId) {
-                    zoneElem.classList.add('tap-target-active');
-                } else {
-                    zoneElem.classList.remove('tap-target-active');
-                }
-            });
-
-            // NEXT BLOCK BUTTON STATUS
-            const btnNext = document.getElementById('btn-next-block');
-            if (poolCount === 0) {
-                btnNext.disabled = false;
-                btnNext.className = "px-3 sm:px-4 py-1.5 font-black rounded-xl text-xs transition-all flex items-center gap-1.5 border shadow-lg cursor-pointer btn-next-ready";
-            } else {
-                btnNext.disabled = true;
-                btnNext.className = "px-3 sm:px-4 py-1.5 bg-slate-200 text-slate-400 font-black rounded-xl text-xs transition-all flex items-center gap-1.5 border border-slate-300 cursor-not-allowed";
-            }
-
-            renderKaTeX();
-        }
-
-        function createUnplacedCard(item) {
-            const card = document.createElement('div');
-            card.id = item.id;
-            card.draggable = true;
-
-            const isSelected = (selectedCardId === item.id);
-            card.className = `eq-card p-2.5 sm:p-3 rounded-xl bg-white border-2 ${isSelected ? 'selected-card' : 'border-slate-200 hover:border-slate-300'} flex items-center justify-between shadow-sm select-none gap-2`;
-
-            card.innerHTML = `
-                <div class="flex items-center gap-2 overflow-hidden">
-                    <i class="fa-solid fa-grip-vertical text-slate-300 text-xs shrink-0 hidden sm:inline"></i>
-                    <span class="katex-render text-xs sm:text-sm font-extrabold text-slate-800" data-latex="${item.latex}"></span>
-                </div>
-                <div class="flex items-center gap-1 shrink-0">
-                    ${isSelected ? '<span class="text-[10px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">Selecionada</span>' : '<i class="fa-solid fa-hand-pointer text-slate-300 text-xs"></i>'}
-                </div>
-            `;
-
-            // Desktop Drag events
-            card.addEventListener('dragstart', (e) => handleDragStart(e, item.id));
-            card.addEventListener('dragend', handleDragEnd);
-
-            // Touch / Click Select
-            card.addEventListener('click', (e) => {
-                e.stopPropagation();
-                handleCardSelect(item.id);
-            });
-
-            return card;
-        }
-
-        function createSolvedCard(item, zoneNum) {
-            const card = document.createElement('div');
-            card.id = item.id;
-            card.className = "w-full p-2.5 rounded-xl bg-white border-2 border-slate-200 shadow-sm flex flex-col gap-1.5 shrink-0";
-
-            let stepsHTML = "";
-
-            if (zoneNum === 1) {
-                // CAIXA 1: RAIZ QUADRADA
-                stepsHTML = `
-                    <div class="space-y-0.5 text-xs text-slate-700">
-                        <div class="flex items-center gap-1 flex-wrap">
-                            <span class="font-bold text-slate-400 text-[10px]">Isolar:</span>
-                            <span class="katex-render" data-latex="${item.steps.isolate}"></span>
-                        </div>
-                        <div class="flex items-center gap-1 flex-wrap">
-                            <span class="font-bold text-slate-400 text-[10px]">Raiz:</span>
-                            <span class="katex-render" data-latex="${item.steps.root}"></span>
-                        </div>
-                    </div>
-                `;
-            } else if (zoneNum === 2) {
-                // CAIXA 2: FATORAÇÃO (x EM EVIDÊNCIA)
-                stepsHTML = `
-                    <div class="space-y-0.5 text-xs text-slate-700">
-                        <div class="flex items-center gap-1 flex-wrap">
-                            <span class="font-bold text-slate-400 text-[10px]">Evidência:</span>
-                            <span class="katex-render" data-latex="${item.steps.factor}"></span>
-                        </div>
-                        <div class="flex items-center gap-1 flex-wrap">
-                            <span class="font-bold text-slate-400 text-[10px]">Raízes:</span>
-                            <span class="katex-render" data-latex="${item.steps.roots}"></span>
-                        </div>
-                    </div>
-                `;
-            } else if (zoneNum === 3) {
-                // CAIXA 3: BHASKARA COM BLOCO DO DELTA DESTACADO SEPARADO
-                stepsHTML = `
-                    <div class="space-y-1 text-xs text-slate-700">
-                        <!-- HIGHLIGHTED DELTA CALCULATION BLOCK -->
-                        <div class="px-2 py-1 bg-emerald-50 border border-emerald-300 rounded-lg shadow-inner">
-                            <span class="text-emerald-900 font-extrabold block text-[9px] uppercase tracking-wider">Cálculo do Delta (\\Delta = b^2 - 4ac):</span>
-                            <span class="katex-render text-emerald-800 font-bold block mt-0.5" data-latex="${item.steps.delta}"></span>
-                        </div>
-
-                        <div class="flex items-center gap-1 flex-wrap">
-                            <span class="font-bold text-slate-400 text-[10px]">Fórmula:</span>
-                            <span class="katex-render" data-latex="${item.steps.formula}"></span>
-                        </div>
-                        <div class="flex items-center gap-1 flex-wrap">
-                            <span class="font-bold text-slate-400 text-[10px]">Raízes:</span>
-                            <span class="katex-render" data-latex="${item.steps.roots}"></span>
-                        </div>
-                    </div>
-                `;
-            }
-
-            card.innerHTML = `
-                <div class="flex items-center justify-between pb-1 border-b border-slate-100">
-                    <span class="katex-render text-xs font-black text-slate-900" data-latex="${item.latex}"></span>
-                    <i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
-                </div>
-
-                ${stepsHTML}
-
-                <div class="pt-1 border-t border-slate-100 flex items-center justify-between">
-                    <span class="text-[9px] font-bold text-slate-400 uppercase">Solução:</span>
-                    <span class="katex-render text-emerald-700 font-bold text-xs" data-latex="${item.steps.solution}"></span>
-                </div>
-            `;
-
-            return card;
-        }
-
-        function renderKaTeX() {
-            document.querySelectorAll('.katex-render').forEach(elem => {
-                const latex = elem.getAttribute('data-latex');
-                if (latex) {
-                    try {
-                        katex.render(latex, elem, { throwOnError: false, displayMode: false });
-                    } catch (e) {
-                        elem.textContent = latex;
-                    }
-                }
-            });
-        }
-
-        function handleDragStart(e, id) {
-            e.dataTransfer.setData('text/plain', id);
-            selectedCardId = id;
-            setTimeout(() => {
-                const card = document.getElementById(id);
-                if (card) card.classList.add('dragging');
-            }, 10);
-        }
-
-        function handleDragEnd() {
-            const card = document.getElementById(selectedCardId);
-            if (card) card.classList.remove('dragging');
-            document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-over'));
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.currentTarget.classList.add('drag-over');
-        }
-
-        function handleDragLeave(e) {
-            e.currentTarget.classList.remove('drag-over');
-        }
-
-        function handleDrop(e, targetZone) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.currentTarget.classList.remove('drag-over');
-
-            const id = e.dataTransfer.getData('text/plain') || selectedCardId;
-            if (!id) return;
-
-            attemptPlacement(id, targetZone);
-        }
-
-        function handleCardSelect(id) {
-            selectedCardId = (selectedCardId === id) ? null : id;
-            renderUI();
-        }
-
-        function handleZoneClick(targetZone) {
-            if (selectedCardId && (targetZone === 1 || targetZone === 2 || targetZone === 3)) {
-                attemptPlacement(selectedCardId, targetZone);
-            }
-        }
-
-        function attemptPlacement(cardId, targetZone) {
-            const item = activeBlockState.find(e => e.id === cardId);
-            if (!item) return;
-
-            if (targetZone === item.category) {
-                // SUCCESS
-                item.currentZone = targetZone;
-                selectedCardId = null;
-                playSound('success');
-                renderUI();
-
-                const unplaced = activeBlockState.filter(e => e.currentZone === 'pool').length;
-                if (unplaced === 0 && typeof confetti === 'function') {
-                    confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
-                }
-            } else if (targetZone !== 'pool') {
-                // INCORRECT CATEGORY
-                playSound('error');
-                showToast(`Esta equação não pertence à Caixa 0${targetZone}!`);
-
-                const cardElem = document.getElementById(cardId);
-                if (cardElem) {
-                    cardElem.classList.add('shake-animation');
-                    setTimeout(() => cardElem.classList.remove('shake-animation'), 400);
-                }
-            }
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast-message');
-            document.getElementById('toast-text').innerText = msg;
-            toast.classList.remove('hidden');
-
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 2200);
-        }
-
-        function openGithubModal() {
-            document.getElementById('github-modal').classList.remove('hidden');
-        }
-
-        function closeGithubModal() {
-            document.getElementById('github-modal').classList.add('hidden');
-        }
-
-        function showCompletionModal() {
-            let totalEqs = 0;
-            BLOCKS_DATA.forEach(b => totalEqs += b.equations.length);
-            document.getElementById('modal-total-eqs').innerText = `${totalEqs} / ${totalEqs}`;
-            document.getElementById('modal-accuracy').innerText = "100%";
-            document.getElementById('completion-modal').classList.remove('hidden');
-            if (typeof confetti === 'function') {
-                confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-            }
-        }
-    </script>
+    // CONTROLE DO MODAL DE INSTRUÇÕES GITHUB
+    function openGithubModal() {
+      document.getElementById('github-modal').classList.remove('hidden');
+    }
+    function closeGithubModal() {
+      document.getElementById('github-modal').classList.add('hidden');
+    }
+  </script>
 </body>
 </html>
