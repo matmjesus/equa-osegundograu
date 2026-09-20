@@ -1,601 +1,392 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Classificador e Resolutor de Equações do 2º Grau</title>
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- KaTeX CSS & JS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-  
-  <!-- Canvas Confetti -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
-  <style>
-    html, body {
-      height: 100vh;
-      height: 100dvh;
-      overflow: hidden;
-      background-color: #f1f5f9;
-      user-select: none;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    }
-
-    .prototype-box {
-      background-color: #136382;
-      border: 3px solid #083142;
-      border-radius: 24px;
-      box-shadow: 0 10px 25px -5px rgba(19, 99, 130, 0.25);
-    }
-
-    .katex {
-      font-size: 1.65rem !important;
-      font-weight: 800 !important;
-      line-height: 1.25 !important;
-      color: #0f172a !important;
-    }
-
-    .katex-display {
-      margin: 0 !important;
-      padding: 2px 0 !important;
-    }
-
-    .sol-card .katex {
-      font-size: 1.45rem !important;
-      font-weight: 800 !important;
-      color: #0f172a !important;
-    }
-
-    [id^="sol-delta-"] .katex {
-      font-size: 1.20rem !important;
-    }
-
-    .eq-card {
-      background-color: #ffffff;
-      border: 2px solid #083142;
-      border-radius: 18px;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      cursor: grab;
-      touch-action: manipulation;
-    }
-
-    .eq-card:active {
-      cursor: grabbing;
-    }
-
-    .eq-card.selected {
-      border-color: #f59e0b;
-      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.4);
-      transform: scale(1.02);
-    }
-
-    /* Suporte a toque e rolagem fluida mobile */
-    .custom-scroll {
-      -webkit-overflow-scrolling: touch;
-      touch-action: pan-y;
-      overscroll-behavior: contain;
-    }
-
-    .custom-scroll::-webkit-scrollbar {
-      width: 6px;
-    }
-    .custom-scroll::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 10px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.4);
-      border-radius: 10px;
-    }
-
-    @keyframes pulse-btn {
-      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-      50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
-    }
-    .btn-next-active {
-      animation: pulse-btn 2s infinite;
-      background-color: #16a34a !important;
-      cursor: pointer !important;
-    }
-  </style>
-</head>
-<body class="flex flex-col h-screen overflow-hidden text-slate-800">
-
-  <!-- CABEÇALHO SUPERIOR FIXO -->
-  <header class="h-16 bg-slate-900 text-white px-4 flex items-center justify-between shrink-0 shadow-md z-10">
-    <div class="flex items-center gap-3">
-      <div class="bg-amber-500 text-slate-950 font-black px-2.5 py-1 rounded-lg text-sm tracking-wider uppercase">
-        2º GRAU
-      </div>
-      <h1 class="text-lg font-bold tracking-tight hidden sm:block">Laboratório de Equações</h1>
-    </div>
-
-    <div class="flex items-center gap-3">
-      <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 flex items-center gap-2">
-        <span class="text-xs uppercase font-bold text-slate-400">Bloco</span>
-        <span id="block-indicator" class="text-base font-black text-amber-400">1 de 5</span>
-      </div>
-
-      <button id="btn-next" onclick="nextBlock()" disabled 
-        class="bg-slate-700 text-slate-400 font-bold px-4 py-2 rounded-xl text-sm transition-all flex items-center gap-2 cursor-not-allowed">
-        <span>Próximo</span>
-        <span>➔</span>
-      </button>
-
-      <button onclick="openGithubModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl border border-slate-700 transition-colors" title="Como publicar no GitHub">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- NAVEGAÇÃO MOBILE -->
-  <div class="md:hidden bg-slate-200 p-1 flex gap-1 border-b border-slate-300 shrink-0 z-10">
-    <button id="tab-deck" onclick="switchMobileTab('deck')" class="flex-1 py-2 font-bold text-xs rounded-lg bg-slate-900 text-white shadow-sm">
-      Baralho de Equações
-    </button>
-    <button id="tab-boxes" onclick="switchMobileTab('boxes')" class="flex-1 py-2 font-bold text-xs rounded-lg text-slate-700 hover:bg-slate-300">
-      Caixas de Destino
-    </button>
-  </div>
-
-  <!-- ÁREA DE TRABALHO PRINCIPAL -->
-  <main class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 p-3 h-[calc(100vh-4rem)] overflow-hidden max-w-[1600px] mx-auto w-full">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Drones - Marcação de Ângulo Reto</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     
-    <!-- ESQUERDA: AS 3 CAIXAS DE DESTINO (COM ROLAGEM NO CELULAR) -->
-    <section id="col-boxes" class="hidden md:flex md:col-span-4 lg:col-span-4 flex-col gap-2.5 h-full overflow-y-auto custom-scroll pr-1 md:pr-0">
-      
-      <!-- CAIXA 01: RAIZ QUADRADA -->
-      <div id="box-1" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'raiz')" onclick="handleBoxClick('raiz')"
-           class="prototype-box min-h-[220px] md:min-h-0 md:flex-1 flex flex-col p-3 text-white relative group cursor-pointer border-2 shrink-0 md:shrink">
-        <div class="flex items-center justify-between mb-1">
-          <div class="flex items-center gap-2">
-            <span class="bg-amber-400 text-slate-950 font-black text-xs px-2 py-0.5 rounded-full">01</span>
-            <h2 class="font-bold text-base tracking-wide">Raiz Quadrada</h2>
-          </div>
-          <span class="katex-header-badge text-xs bg-slate-900/60 px-2 py-0.5 rounded border border-white/20"></span>
-        </div>
-        <p class="text-[11px] text-slate-200 mb-2 leading-tight">Equações incompletas ($b=0$). Isola o termo quadrático e extrai $\pm\sqrt{k}$.</p>
-        <div id="content-box-1" class="flex-1 bg-black/20 rounded-xl p-2 custom-scroll overflow-y-auto space-y-2 border border-white/10 flex flex-col items-stretch justify-start min-h-[110px]">
-          <div class="placeholder-text text-xs text-slate-200 italic text-center my-auto py-2">
-            Arraste ou toque na equação e toque aqui
-          </div>
-        </div>
-      </div>
+    body {
+        min-height: 100vh;
+        background: #0f172a;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding-bottom: 20px;
+    }
+    
+    header {
+        padding: 12px 15px;
+        text-align: center;
+        width: 100%;
+        background: #1e293b;
+        border-bottom: 2px solid #3b82f6;
+    }
 
-      <!-- CAIXA 02: FATORAÇÃO -->
-      <div id="box-2" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'fatoracao')" onclick="handleBoxClick('fatoracao')"
-           class="prototype-box min-h-[220px] md:min-h-0 md:flex-1 flex flex-col p-3 text-white relative group cursor-pointer border-2 shrink-0 md:shrink">
-        <div class="flex items-center justify-between mb-1">
-          <div class="flex items-center gap-2">
-            <span class="bg-amber-400 text-slate-950 font-black text-xs px-2 py-0.5 rounded-full">02</span>
-            <h2 class="font-bold text-base tracking-wide">Fatoração</h2>
-          </div>
-          <span class="katex-header-badge text-xs bg-slate-900/60 px-2 py-0.5 rounded border border-white/20"></span>
-        </div>
-        <p class="text-[11px] text-slate-200 mb-2 leading-tight">Equações incompletas ($c=0$). Coloca $x$ em evidência: $x(ax+b)=0$.</p>
-        <div id="content-box-2" class="flex-1 bg-black/20 rounded-xl p-2 custom-scroll overflow-y-auto space-y-2 border border-white/10 flex flex-col items-stretch justify-start min-h-[110px]">
-          <div class="placeholder-text text-xs text-slate-200 italic text-center my-auto py-2">
-            Arraste ou toque na equação e toque aqui
-          </div>
-        </div>
-      </div>
+    header h3 {
+        font-size: 1.1rem;
+        margin-bottom: 2px;
+    }
 
-      <!-- CAIXA 03: BHASKARA -->
-      <div id="box-3" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'bhaskara')" onclick="handleBoxClick('bhaskara')"
-           class="prototype-box min-h-[220px] md:min-h-0 md:flex-1 flex flex-col p-3 text-white relative group cursor-pointer border-2 shrink-0 md:shrink">
-        <div class="flex items-center justify-between mb-1">
-          <div class="flex items-center gap-2">
-            <span class="bg-amber-400 text-slate-950 font-black text-xs px-2 py-0.5 rounded-full">03</span>
-            <h2 class="font-bold text-base tracking-wide">Fórmula de Bhaskara</h2>
-          </div>
-          <span class="katex-header-badge text-xs bg-slate-900/60 px-2 py-0.5 rounded border border-white/20"></span>
-        </div>
-        <p class="text-[11px] text-slate-200 mb-2 leading-tight">Equações completas ($a,b,c \neq 0$). Cálculo do $\Delta$ separado e fórmula geral.</p>
-        <div id="content-box-3" class="flex-1 bg-black/20 rounded-xl p-2 custom-scroll overflow-y-auto space-y-2 border border-white/10 flex flex-col items-stretch justify-start min-h-[110px]">
-          <div class="placeholder-text text-xs text-slate-200 italic text-center my-auto py-2">
-            Arraste ou toque na equação e toque aqui
-          </div>
-        </div>
-      </div>
+    header p {
+        font-size: 0.85rem;
+        color: #94a3b8;
+    }
 
-    </section>
+    main {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        padding: 10px;
+    }
 
-    <!-- DIREITA: O BARALHO DE EQUAÇÕES DA RODADA -->
-    <section id="col-deck" class="col-span-1 md:col-span-8 lg:col-span-8 prototype-box flex flex-col p-4 text-white overflow-hidden h-full">
-      <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/20">
-        <div>
-          <h2 class="font-black text-xl tracking-tight flex items-center gap-2">
-            <span>Baralho de Equações</span>
-          </h2>
-          <p class="text-xs text-slate-200">Arraste para as caixas ou toque na equação e depois na caixa.</p>
-        </div>
-        <div class="text-right">
-          <span id="remaining-count" class="text-2xl font-black text-amber-400">10</span>
-          <span class="text-[10px] uppercase font-bold text-slate-300 block">Restantes</span>
-        </div>
-      </div>
+    .cartesian-plane {
+        width: min(92vw, 500px);
+        height: min(92vw, 500px);
+        background: white;
+        position: relative;
+        margin-top: 5px;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        touch-action: manipulation;
+    }
 
-      <div id="deck-container" class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 custom-scroll overflow-y-auto p-1">
-        <!-- Cards dinâmicos -->
-      </div>
-    </section>
+    #angleCanvas { 
+        position: absolute; 
+        top: 0; 
+        left: 0; 
+        width: 100%;
+        height: 100%;
+        z-index: 30; 
+        pointer-events: none; 
+    }
 
-  </main>
+    .grid-line { position: absolute; background: #e2e8f0; }
+    .grid-line.vertical { width: 1px; height: 100%; }
+    .grid-line.horizontal { width: 100%; height: 1px; }
+    
+    .axis { position: absolute; background: #64748b; z-index: 2; }
+    .axis.x-axis { width: 100%; height: 2px; top: 50%; left: 0; }
+    .axis.y-axis { width: 2px; height: 100%; left: 50%; top: 0; }
+    .axis-label { 
+        position: absolute; 
+        color: #64748b; 
+        font-size: Clamp(8px, 2vw, 10px); 
+        font-weight: bold; 
+        transform: translate(-50%, -50%); 
+        z-index: 5; 
+        user-select: none;
+    }
 
-  <!-- MODAL GITHUB PAGES -->
-  <div id="github-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white text-slate-900 rounded-3xl p-6 max-w-lg w-full shadow-2xl border-2 border-slate-800">
-      <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
-        <h3 class="font-black text-xl text-slate-900 flex items-center gap-2">
-          🚀 Publicar no GitHub Pages
-        </h3>
-        <button onclick="closeGithubModal()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">✕</button>
-      </div>
-      <ol class="space-y-3 text-sm text-slate-700 font-medium list-decimal list-inside mb-6">
-        <li>Crie um repositório público no seu <b>GitHub</b>.</li>
-        <li>Faça o upload deste arquivo salvo como <code>index.html</code>.</li>
-        <li>Vá em <b>Settings ➔ Pages</b> no seu repositório.</li>
-        <li>Em <i>Source</i>, selecione <b>Deploy from a branch</b> e escolha <code>main</code> / <code>root</code>.</li>
-        <li>Acesse o link gerado no seu celular e projete na aula!</li>
-      </ol>
-      <button onclick="closeGithubModal()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition-colors">
-        Entendido, fechar!
-      </button>
+    .drone {
+        position: absolute; 
+        width: clamp(35px, 8vw, 48px); 
+        height: clamp(35px, 8vw, 48px); 
+        z-index: 100;
+        transform: translate(-50%, -50%);
+        transition: left 1.5s cubic-bezier(0.4, 0, 0.2, 1), top 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .propeller { animation: spin 0.1s linear infinite; transform-origin: center; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    .coord-tag {
+        position: absolute; 
+        background: rgba(15, 23, 42, 0.85); 
+        color: white;
+        padding: 2px 6px; 
+        border-radius: 4px; 
+        font-size: clamp(9px, 2.2vw, 11px);
+        pointer-events: none; 
+        z-index: 101; 
+        transform: translate(-50%, -160%);
+        white-space: nowrap;
+    }
+
+    .triangle-line { 
+        position: absolute; 
+        height: 3px; 
+        background: #3b82f6; 
+        z-index: 40; 
+        transform-origin: left center; 
+        pointer-events: none; 
+    }
+    
+    .angle-label {
+        position: absolute; 
+        color: #dc2626; 
+        font-weight: 900; 
+        font-size: clamp(14px, 3.5vw, 18px);
+        z-index: 110; 
+        pointer-events: none; 
+        text-shadow: 1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white;
+    }
+
+    .controls { 
+        margin-top: 15px; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        gap: 10px; 
+        width: 100%;
+        padding: 0 15px;
+    }
+
+    .btn {
+        background: #3b82f6; 
+        color: white; 
+        border: none;
+        padding: 12px 28px; 
+        border-radius: 50px; 
+        cursor: pointer;
+        font-weight: bold; 
+        font-size: 0.95rem;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        transition: background 0.2s, transform 0.1s;
+        width: min(100%, 300px);
+    }
+
+    .btn:active { transform: scale(0.97); background: #2563eb; }
+
+    .type-badge { 
+        background: #10b981; 
+        padding: 6px 18px; 
+        border-radius: 20px; 
+        font-weight: bold; 
+        font-size: 0.85rem; 
+        letter-spacing: 0.5px;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h3>Escola Municipal José Cardoso de Lima</h3>
+    <p>Geometria Analítica: Identificação de Ângulos Retos</p>
+</header>
+
+<main>
+    <div class="cartesian-plane" id="plane">
+        <canvas id="angleCanvas"></canvas>
+        <div class="axis x-axis"></div>
+        <div class="axis y-axis"></div>
+        
+        <div class="triangle-line" id="line1"></div>
+        <div class="triangle-line" id="line2"></div>
+        <div class="triangle-line" id="line3"></div>
+
+        <div class="angle-label" id="ang1"></div>
+        <div class="angle-label" id="ang2"></div>
+        <div class="angle-label" id="ang3"></div>
+
+        <div id="drone1" class="drone"></div>
+        <div id="drone2" class="drone"></div>
+        <div id="drone3" class="drone"></div>
+        
+        <div id="tag1" class="coord-tag"></div>
+        <div id="tag2" class="coord-tag"></div>
+        <div id="tag3" class="coord-tag"></div>
     </div>
-  </div>
+</main>
 
-  <script>
-    // BANCO DE DADOS COMPLETO (5 BLOCOS x 10 EQUAÇÕES = 50 EQUAÇÕES)
-    const equationBlocks = [
-      // BLOCO 1
-      [
-        { id: 'b1_1', tex: 'x^2 - 16 = 0', type: 'raiz', sol: { steps: ['x^2 = 16', 'x = \\pm \\sqrt{16}', 'S = \\{-4, 4\\}'] } },
-        { id: 'b1_2', tex: '2x^2 - 8x = 0', type: 'fatoracao', sol: { steps: ['x(2x - 8) = 0', 'x_1 = 0 \\text{ ou } 2x - 8 = 0', 'S = \\{0, 4\\}'] } },
-        { id: 'b1_3', tex: 'x^2 - 5x + 6 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-5)^2 - 4(1)(6) = 25 - 24 = 1', formula: 'x = \\frac{5 \\pm 1}{2}', roots: 'S = \\{2, 3\\}' } },
-        { id: 'b1_4', tex: '3x^2 - 27 = 0', type: 'raiz', sol: { steps: ['3x^2 = 27 \\implies x^2 = 9', 'x = \\pm \\sqrt{9}', 'S = \\{-3, 3\\}'] } },
-        { id: 'b1_5', tex: 'x^2 + 7x = 0', type: 'fatoracao', sol: { steps: ['x(x + 7) = 0', 'x_1 = 0 \\text{ ou } x + 7 = 0', 'S = \\{-7, 0\\}'] } },
-        { id: 'b1_6', tex: 'x^2 - 2x - 3 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-2)^2 - 4(1)(-3) = 4 + 12 = 16', formula: 'x = \\frac{2 \\pm 4}{2}', roots: 'S = \\{-1, 3\\}' } },
-        { id: 'b1_7', tex: 'x^2 - 25 = 0', type: 'raiz', sol: { steps: ['x^2 = 25', 'x = \\pm \\sqrt{25}', 'S = \\{-5, 5\\}'] } },
-        { id: 'b1_8', tex: '5x^2 - 10x = 0', type: 'fatoracao', sol: { steps: ['x(5x - 10) = 0', 'x_1 = 0 \\text{ ou } 5x - 10 = 0', 'S = \\{0, 2\\}'] } },
-        { id: 'b1_9', tex: 'x^2 - 4x + 4 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-4)^2 - 4(1)(4) = 16 - 16 = 0', formula: 'x = \\frac{4 \\pm 0}{2}', roots: 'S = \\{2\\}' } },
-        { id: 'b1_10', tex: '4x^2 - 64 = 0', type: 'raiz', sol: { steps: ['4x^2 = 64 \\implies x^2 = 16', 'x = \\pm \\sqrt{16}', 'S = \\{-4, 4\\}'] } }
-      ],
-      // BLOCO 2
-      [
-        { id: 'b2_1', tex: 'x^2 - 49 = 0', type: 'raiz', sol: { steps: ['x^2 = 49', 'x = \\pm \\sqrt{49}', 'S = \\{-7, 7\\}'] } },
-        { id: 'b2_2', tex: 'x^2 - 9x = 0', type: 'fatoracao', sol: { steps: ['x(x - 9) = 0', 'x_1 = 0 \\text{ ou } x - 9 = 0', 'S = \\{0, 9\\}'] } },
-        { id: 'b2_3', tex: 'x^2 - 7x + 10 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-7)^2 - 4(1)(10) = 49 - 40 = 9', formula: 'x = \\frac{7 \\pm 3}{2}', roots: 'S = \\{2, 5\\}' } },
-        { id: 'b2_4', tex: '2x^2 - 50 = 0', type: 'raiz', sol: { steps: ['2x^2 = 50 \\implies x^2 = 25', 'x = \\pm \\sqrt{25}', 'S = \\{-5, 5\\}'] } },
-        { id: 'b2_5', tex: '3x^2 + 12x = 0', type: 'fatoracao', sol: { steps: ['x(3x + 12) = 0', 'x_1 = 0 \\text{ ou } 3x + 12 = 0', 'S = \\{-4, 0\\}'] } },
-        { id: 'b2_6', tex: 'x^2 - 6x + 8 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-6)^2 - 4(1)(8) = 36 - 32 = 4', formula: 'x = \\frac{6 \\pm 2}{2}', roots: 'S = \\{2, 4\\}' } },
-        { id: 'b2_7', tex: 'x^2 - 81 = 0', type: 'raiz', sol: { steps: ['x^2 = 81', 'x = \\pm \\sqrt{81}', 'S = \\{-9, 9\\}'] } },
-        { id: 'b2_8', tex: '4x^2 - 12x = 0', type: 'fatoracao', sol: { steps: ['x(4x - 12) = 0', 'x_1 = 0 \\text{ ou } 4x - 12 = 0', 'S = \\{0, 3\\}'] } },
-        { id: 'b2_9', tex: '2x^2 - 3x - 2 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-3)^2 - 4(2)(-2) = 9 + 16 = 25', formula: 'x = \\frac{3 \\pm 5}{4}', roots: 'S = \\{-1/2, 2\\}' } },
-        { id: 'b2_10', tex: 'x^2 - 100 = 0', type: 'raiz', sol: { steps: ['x^2 = 100', 'x = \\pm \\sqrt{100}', 'S = \\{-10, 10\\}'] } }
-      ],
-      // BLOCO 3
-      [
-        { id: 'b3_1', tex: 'x^2 - 36 = 0', type: 'raiz', sol: { steps: ['x^2 = 36', 'x = \\pm \\sqrt{36}', 'S = \\{-6, 6\\}'] } },
-        { id: 'b3_2', tex: 'x^2 - 11x = 0', type: 'fatoracao', sol: { steps: ['x(x - 11) = 0', 'x_1 = 0 \\text{ ou } x - 11 = 0', 'S = \\{0, 11\\}'] } },
-        { id: 'b3_3', tex: 'x^2 - 8x + 12 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-8)^2 - 4(1)(12) = 64 - 48 = 16', formula: 'x = \\frac{8 \\pm 4}{2}', roots: 'S = \\{2, 6\\}' } },
-        { id: 'b3_4', tex: '5x^2 - 45 = 0', type: 'raiz', sol: { steps: ['5x^2 = 45 \\implies x^2 = 9', 'x = \\pm 3', 'S = \\{-3, 3\\}'] } },
-        { id: 'b3_5', tex: '6x^2 - 18x = 0', type: 'fatoracao', sol: { steps: ['x(6x - 18) = 0', 'x_1 = 0 \\text{ ou } 6x - 18 = 0', 'S = \\{0, 3\\}'] } },
-        { id: 'b3_6', tex: 'x^2 - 10x + 25 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-10)^2 - 4(1)(25) = 100 - 100 = 0', formula: 'x = \\frac{10 \\pm 0}{2}', roots: 'S = \\{5\\}' } },
-        { id: 'b3_7', tex: 'x^2 - 121 = 0', type: 'raiz', sol: { steps: ['x^2 = 121', 'x = \\pm \\sqrt{121}', 'S = \\{-11, 11\\}'] } },
-        { id: 'b3_8', tex: '7x^2 + 14x = 0', type: 'fatoracao', sol: { steps: ['x(7x + 14) = 0', 'x_1 = 0 \\text{ ou } 7x + 14 = 0', 'S = \\{-2, 0\\}'] } },
-        { id: 'b3_9', tex: 'x^2 - x - 6 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-1)^2 - 4(1)(-6) = 1 + 24 = 25', formula: 'x = \\frac{1 \\pm 5}{2}', roots: 'S = \\{-2, 3\\}' } },
-        { id: 'b3_10', tex: 'x^2 - 144 = 0', type: 'raiz', sol: { steps: ['x^2 = 144', 'x = \\pm 12', 'S = \\{-12, 12\\}'] } }
-      ],
-      // BLOCO 4
-      [
-        { id: 'b4_1', tex: '2x^2 - 18 = 0', type: 'raiz', sol: { steps: ['2x^2 = 18 \\implies x^2 = 9', 'x = \\pm 3', 'S = \\{-3, 3\\}'] } },
-        { id: 'b4_2', tex: 'x^2 + 15x = 0', type: 'fatoracao', sol: { steps: ['x(x + 15) = 0', 'x_1 = 0 \\text{ ou } x + 15 = 0', 'S = \\{-15, 0\\}'] } },
-        { id: 'b4_3', tex: 'x^2 - 12x + 35 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-12)^2 - 4(1)(35) = 144 - 140 = 4', formula: 'x = \\frac{12 \\pm 2}{2}', roots: 'S = \\{5, 7\\}' } },
-        { id: 'b4_4', tex: 'x^2 - 1 = 0', type: 'raiz', sol: { steps: ['x^2 = 1', 'x = \\pm 1', 'S = \\{-1, 1\\}'] } },
-        { id: 'b4_5', tex: '8x^2 - 32x = 0', type: 'fatoracao', sol: { steps: ['x(8x - 32) = 0', 'x_1 = 0 \\text{ ou } 8x - 32 = 0', 'S = \\{0, 4\\}'] } },
-        { id: 'b4_6', tex: 'x^2 + 2x - 15 = 0', type: 'bhaskara', sol: { delta: '\\Delta = 2^2 - 4(1)(-15) = 4 + 60 = 64', formula: 'x = \\frac{-2 \\pm 8}{2}', roots: 'S = \\{-5, 3\\}' } },
-        { id: 'b4_7', tex: '3x^2 - 12 = 0', type: 'raiz', sol: { steps: ['3x^2 = 12 \\implies x^2 = 4', 'x = \\pm 2', 'S = \\{-2, 2\\}'] } },
-        { id: 'b4_8', tex: 'x^2 - 20x = 0', type: 'fatoracao', sol: { steps: ['x(x - 20) = 0', 'x_1 = 0 \\text{ ou } x - 20 = 0', 'S = \\{0, 20\\}'] } },
-        { id: 'b4_9', tex: '3x^2 - 7x + 2 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-7)^2 - 4(3)(2) = 49 - 24 = 25', formula: 'x = \\frac{7 \\pm 5}{6}', roots: 'S = \\{1/3, 2\\}' } },
-        { id: 'b4_10', tex: 'x^2 - 225 = 0', type: 'raiz', sol: { steps: ['x^2 = 225', 'x = \\pm 15', 'S = \\{-15, 15\\}'] } }
-      ],
-      // BLOCO 5
-      [
-        { id: 'b5_1', tex: 'x^2 - 4 = 0', type: 'raiz', sol: { steps: ['x^2 = 4', 'x = \\pm 2', 'S = \\{-2, 2\\}'] } },
-        { id: 'b5_2', tex: 'x^2 - 3x = 0', type: 'fatoracao', sol: { steps: ['x(x - 3) = 0', 'x_1 = 0 \\text{ ou } x - 3 = 0', 'S = \\{0, 3\\}'] } },
-        { id: 'b5_3', tex: 'x^2 - 9x + 20 = 0', type: 'bhaskara', sol: { delta: '\\Delta = (-9)^2 - 4(1)(20) = 81 - 80 = 1', formula: 'x = \\frac{9 \\pm 1}{2}', roots: 'S = \\{4, 5\\}' } },
-        { id: 'b5_4', tex: '10x^2 - 1000 = 0', type: 'raiz', sol: { steps: ['10x^2 = 1000 \\implies x^2 = 100', 'x = \\pm 10', 'S = \\{-10, 10\\}'] } },
-        { id: 'b5_5', tex: '10x^2 - 50x = 0', type: 'fatoracao', sol: { steps: ['x(10x - 50) = 0', 'x_1 = 0 \\text{ ou } 10x - 50 = 0', 'S = \\{0, 5\\}'] } },
-        { id: 'b5_6', tex: 'x^2 + 5x + 6 = 0', type: 'bhaskara', sol: { delta: '\\Delta = 5^2 - 4(1)(6) = 25 - 24 = 1', formula: 'x = \\frac{-5 \\pm 1}{2}', roots: 'S = \\{-3, -2\\}' } },
-        { id: 'b5_7', tex: 'x^2 - 169 = 0', type: 'raiz', sol: { steps: ['x^2 = 169', 'x = \\pm 13', 'S = \\{-13, 13\\}'] } },
-        { id: 'b5_8', tex: 'x^2 + x = 0', type: 'fatoracao', sol: { steps: ['x(x + 1) = 0', 'x_1 = 0 \\text{ ou } x + 1 = 0', 'S = \\{-1, 0\\}'] } },
-        { id: 'b5_9', tex: '2x^2 + 5x - 3 = 0', type: 'bhaskara', sol: { delta: '\\Delta = 5^2 - 4(2)(-3) = 25 + 24 = 49', formula: 'x = \\frac{-5 \\pm 7}{4}', roots: 'S = \\{-3, 1/2\\}' } },
-        { id: 'b5_10', tex: 'x^2 - 400 = 0', type: 'raiz', sol: { steps: ['x^2 = 400', 'x = \\pm 20', 'S = \\{-20, 20\\}'] } }
-      ]
+<div class="controls">
+    <div class="type-badge" id="type-display">Aguardando...</div>
+    <button class="btn" onclick="generateMission()">GERAR NOVO TRIÂNGULO</button>
+</div>
+
+<script>
+    const plane = document.getElementById('plane');
+    const canvas = document.getElementById('angleCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let gridSize = 30;
+    let center = 150;
+    let modeIndex = 0;
+
+    const droneSVGs = [
+        `<svg viewBox="0 0 100 100"><path d="M10 50 L90 50 M50 10 L50 90" stroke="#f97316" stroke-width="8"/><circle cx="50" cy="50" r="15" fill="#c2410c"/><g class="propeller"><circle cx="10" cy="50" r="8" fill="#fb923c"/></g><g class="propeller"><circle cx="90" cy="50" r="8" fill="#fb923c"/></g></svg>`,
+        `<svg viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="60" rx="10" fill="#0d9488"/><circle cx="50" cy="50" r="10" fill="white"/><g class="propeller"><rect x="10" y="10" width="20" height="5" fill="#5eead4"/></g><g class="propeller"><rect x="70" y="10" width="20" height="5" fill="#5eead4"/></g></svg>`,
+        `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="#7c3aed" stroke="white" stroke-width="3"/><path d="M50 20 L80 80 L20 80 Z" fill="#4c1d95"/><g class="propeller"><circle cx="50" cy="15" r="10" fill="#a78bfa"/></g></svg>`
     ];
 
-    // ESTADO DA APLICAÇÃO
-    let currentBlockIdx = 0;
-    let selectedEqId = null;
-    let placedCountInBlock = 0;
+    function setupGrid() {
+        const size = plane.clientWidth;
+        canvas.width = size;
+        canvas.height = size;
+        gridSize = size / 20;
+        center = size / 2;
 
-    // SINTETIZADOR DE ÁUDIO WEB
-    function playSound(type) {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
+        plane.querySelectorAll('.grid-line, .axis-label').forEach(el => el.remove());
 
-        if (type === 'success') {
-          osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
-          gain.gain.setValueAtTime(0.2, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.25);
-        } else if (type === 'error') {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(180, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.2);
-          gain.gain.setValueAtTime(0.2, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.2);
+        for(let i = 0; i <= 20; i++) {
+            let val = i - 10;
+            
+            let h = document.createElement('div'); 
+            h.className = 'grid-line horizontal'; 
+            h.style.top = (i * gridSize) + 'px'; 
+            plane.appendChild(h);
+
+            let v = document.createElement('div'); 
+            v.className = 'grid-line vertical'; 
+            v.style.left = (i * gridSize) + 'px'; 
+            plane.appendChild(v);
+
+            if(val !== 0) {
+                let lx = document.createElement('div'); 
+                lx.className = 'axis-label'; 
+                lx.style.left = (i * gridSize) + 'px'; 
+                lx.style.top = (center + 12) + 'px'; 
+                lx.textContent = val; 
+                plane.appendChild(lx);
+
+                let ly = document.createElement('div'); 
+                ly.className = 'axis-label'; 
+                ly.style.left = (center - 12) + 'px'; 
+                ly.style.top = (center - val * gridSize) + 'px'; 
+                ly.textContent = val; 
+                plane.appendChild(ly);
+            }
         }
-      } catch (e) {}
+
+        [1,2,3].forEach(i => {
+            let d = document.getElementById(`drone${i}`);
+            if(d.dataset.cx !== undefined) {
+                d.style.left = (center + parseFloat(d.dataset.cx) * gridSize) + 'px';
+                d.style.top = (center - parseFloat(d.dataset.cy) * gridSize) + 'px';
+            }
+        });
     }
 
-    // INICIALIZAÇÃO
-    window.addEventListener('DOMContentLoaded', () => {
-      renderHeaderBadges();
-      loadBlock(0);
-    });
+    function init() {
+        [1,2,3].forEach(i => document.getElementById(`drone${i}`).innerHTML = droneSVGs[i-1]);
+        setupGrid();
+        generateMission();
+        updateLoop();
 
-    function renderHeaderBadges() {
-      const boxBadges = document.querySelectorAll('.katex-header-badge');
-      if (boxBadges[0]) katex.render('b = 0', boxBadges[0]);
-      if (boxBadges[1]) katex.render('c = 0', boxBadges[1]);
-      if (boxBadges[2]) katex.render('a,b,c \\neq 0', boxBadges[2]);
+        window.addEventListener('resize', setupGrid);
     }
 
-    function loadBlock(blockIndex) {
-      currentBlockIdx = blockIndex;
-      selectedEqId = null;
-      placedCountInBlock = 0;
+    function getAngle(A, B, C) {
+        let dAB = Math.hypot(B.x - A.x, B.y - A.y);
+        let dAC = Math.hypot(C.x - A.x, C.y - A.y);
+        let dBC = Math.hypot(C.x - B.x, C.y - B.y);
+        return Math.acos((dAB**2 + dAC**2 - dBC**2) / (2 * dAB * dAC)) * 180 / Math.PI;
+    }
 
-      document.getElementById('block-indicator').innerText = `${currentBlockIdx + 1} de ${equationBlocks.length}`;
-
-      const btnNext = document.getElementById('btn-next');
-      btnNext.disabled = true;
-      btnNext.classList.remove('btn-next-active');
-      btnNext.className = "bg-slate-700 text-slate-400 font-bold px-4 py-2 rounded-xl text-sm transition-all flex items-center gap-2 cursor-not-allowed";
-
-      ['box-1', 'box-2', 'box-3'].forEach((boxId) => {
-        const boxContent = document.getElementById(`content-${boxId}`);
-        boxContent.innerHTML = `
-          <div class="placeholder-text text-xs text-slate-200 italic text-center my-auto py-2">
-            Arraste ou toque na equação e toque aqui
-          </div>`;
-      });
-
-      const deckContainer = document.getElementById('deck-container');
-      deckContainer.innerHTML = '';
-
-      const equations = equationBlocks[currentBlockIdx];
-      document.getElementById('remaining-count').innerText = equations.length;
-
-      equations.forEach((eq) => {
-        const card = document.createElement('div');
-        card.id = `card-${eq.id}`;
-        card.draggable = true;
-        card.className = 'eq-card p-3 flex flex-col justify-between items-center bg-white shadow-md relative group select-none min-h-[90px]';
+    function generateMission() {
+        const types = [
+            { name: "ACUTÂNGULO", check: (angs) => angs.every(a => a < 85) },
+            { name: "RETÂNGULO", check: (angs) => angs.some(a => Math.round(a) === 90) },
+            { name: "OBTUSÂNGULO", check: (angs) => angs.some(a => a > 95) }
+        ];
         
-        card.ondragstart = (e) => handleDragStart(e, eq.id);
-        card.onclick = (e) => {
-          e.stopPropagation();
-          selectCard(eq.id);
+        let valid = false, pts = [];
+        while(!valid) {
+            pts = [1,2,3].map(() => ({ x: Math.floor(Math.random()*13)-6, y: Math.floor(Math.random()*13)-6 }));
+            let as = [getAngle(pts[0],pts[1],pts[2]), getAngle(pts[1],pts[2],pts[0]), getAngle(pts[2],pts[0],pts[1])];
+            if (as.every(a => a >= 40) && types[modeIndex].check(as)) valid = true;
+        }
+
+        pts.forEach((p, i) => {
+            let d = document.getElementById(`drone${i+1}`);
+            d.dataset.cx = p.x; 
+            d.dataset.cy = p.y;
+            d.style.left = (center + p.x * gridSize) + 'px'; 
+            d.style.top = (center - p.y * gridSize) + 'px';
+        });
+
+        document.getElementById('type-display').textContent = types[modeIndex].name;
+        modeIndex = (modeIndex + 1) % 3;
+    }
+
+    function updateLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const getP = (id) => {
+            let r = document.getElementById(id).getBoundingClientRect();
+            let p = plane.getBoundingClientRect();
+            return { x: r.left - p.left + r.width/2, y: r.top - p.top + r.height/2 };
         };
 
-        card.innerHTML = `
-          <div class="w-full flex justify-between items-center text-[10px] font-extrabold text-slate-400 tracking-wider uppercase mb-1">
-            <span>EQUAÇÃO</span>
-            <span class="text-slate-300 group-hover:text-slate-500">⠿ ARRASTE / TOQUE</span>
-          </div>
-          <div id="katex-eq-${eq.id}" class="my-auto text-center w-full overflow-x-auto py-1"></div>
-        `;
+        let p1 = getP('drone1'), p2 = getP('drone2'), p3 = getP('drone3');
+        const points = [p1, p2, p3];
 
-        deckContainer.appendChild(card);
-        const eqElem = document.getElementById(`katex-eq-${eq.id}`);
-        katex.render(eq.tex, eqElem, { displayMode: true, throwOnError: false });
-      });
-    }
+        [1,2,3].forEach(i => {
+            let d = document.getElementById(`drone${i}`);
+            let tag = document.getElementById(`tag${i}`);
+            let p = points[i-1];
 
-    function selectCard(eqId) {
-      if (selectedEqId === eqId) {
-        selectedEqId = null;
-        document.getElementById(`card-${eqId}`)?.classList.remove('selected');
-        return;
-      }
+            tag.style.left = p.x + 'px'; 
+            tag.style.top = p.y + 'px'; 
+            tag.textContent = `(${d.dataset.cx},${d.dataset.cy})`;
 
-      if (selectedEqId) {
-        document.getElementById(`card-${selectedEqId}`)?.classList.remove('selected');
-      }
-
-      selectedEqId = eqId;
-      document.getElementById(`card-${eqId}`)?.classList.add('selected');
-    }
-
-    function handleDragStart(e, eqId) {
-      e.dataTransfer.setData('text/plain', eqId);
-      selectCard(eqId);
-    }
-
-    function allowDrop(e) {
-      e.preventDefault();
-    }
-
-    function handleDrop(e, targetType) {
-      e.preventDefault();
-      const eqId = e.dataTransfer.getData('text/plain') || selectedEqId;
-      if (eqId) {
-        processClassification(eqId, targetType);
-      }
-    }
-
-    function handleBoxClick(targetType) {
-      if (selectedEqId) {
-        processClassification(selectedEqId, targetType);
-      }
-    }
-
-    function processClassification(eqId, targetType) {
-      const eqData = equationBlocks[currentBlockIdx].find(item => item.id === eqId);
-      if (!eqData) return;
-
-      const targetBoxMap = { 'raiz': 'box-1', 'fatoracao': 'box-2', 'bhaskara': 'box-3' };
-      const targetBoxId = targetBoxMap[targetType];
-
-      if (eqData.type === targetType) {
-        playSound('success');
-        
-        document.getElementById(`card-${eqId}`)?.remove();
-        renderSolutionCard(targetBoxId, eqData);
-
-        placedCountInBlock++;
-        selectedEqId = null;
-
-        const totalInBlock = equationBlocks[currentBlockIdx].length;
-        document.getElementById('remaining-count').innerText = totalInBlock - placedCountInBlock;
-
-        if (placedCountInBlock === totalInBlock) {
-          unlockNextBlock();
-        }
-
-      } else {
-        playSound('error');
-        const boxElem = document.getElementById(targetBoxId);
-        boxElem.classList.add('ring-4', 'ring-red-500');
-        setTimeout(() => boxElem.classList.remove('ring-4', 'ring-red-500'), 500);
-      }
-    }
-
-    function renderSolutionCard(boxId, eqData) {
-      const contentContainer = document.getElementById(`content-${boxId}`);
-      
-      const placeholder = contentContainer.querySelector('.placeholder-text');
-      if (placeholder) placeholder.remove();
-
-      const solDiv = document.createElement('div');
-      solDiv.className = 'sol-card w-full bg-white border-2 border-slate-800 rounded-2xl p-3.5 text-slate-900 shadow-xl text-left transition-all shrink-0 my-1';
-
-      const header = document.createElement('div');
-      header.className = 'border-b-2 border-slate-200 pb-2 mb-2 font-black text-slate-900 text-base flex justify-between items-center';
-      header.innerHTML = `<span id="sol-eq-${eqData.id}"></span> <span class="text-xs text-emerald-800 font-extrabold bg-emerald-100 border-2 border-emerald-500 px-2 py-0.5 rounded-lg shadow-sm">✓ RESOLVIDO</span>`;
-      solDiv.appendChild(header);
-
-      const body = document.createElement('div');
-      body.className = 'space-y-2 text-sm font-bold text-slate-900';
-
-      if (eqData.type === 'bhaskara') {
-        const deltaBox = document.createElement('div');
-        deltaBox.className = 'bg-amber-100/90 border-2 border-amber-500 rounded-xl p-2.5 my-1 text-center shadow-sm';
-        deltaBox.innerHTML = `
-          <div class="text-xs text-amber-900 font-black uppercase tracking-wider mb-1">Cálculo do Delta (Δ)</div>
-          <div id="sol-delta-${eqData.id}" class="py-0.5"></div>
-        `;
-        body.appendChild(deltaBox);
-
-        const formDiv = document.createElement('div');
-        formDiv.className = 'text-center py-1 bg-slate-50 border border-slate-200 rounded-xl my-1';
-        formDiv.id = `sol-form-${eqData.id}`;
-        body.appendChild(formDiv);
-
-        const rootsDiv = document.createElement('div');
-        rootsDiv.className = 'text-center font-black text-emerald-950 py-1.5 bg-emerald-50 rounded-xl border-2 border-emerald-400 my-1';
-        rootsDiv.id = `sol-roots-${eqData.id}`;
-        body.appendChild(rootsDiv);
-
-      } else {
-        eqData.sol.steps.forEach((step, idx) => {
-          const isLast = (idx === eqData.sol.steps.length - 1);
-          const stepDiv = document.createElement('div');
-          stepDiv.className = isLast 
-            ? 'text-center font-black text-emerald-950 py-1.5 bg-emerald-50 rounded-xl border-2 border-emerald-400 mt-2' 
-            : 'text-center py-1 bg-slate-50 border border-slate-200 rounded-xl my-1';
-          stepDiv.id = `sol-step-${eqData.id}-${idx}`;
-          body.appendChild(stepDiv);
+            let line = document.getElementById(`line${i}`);
+            let nextP = points[i % 3];
+            
+            line.style.width = Math.hypot(nextP.x - p.x, nextP.y - p.y) + 'px'; 
+            line.style.left = p.x + 'px'; 
+            line.style.top = p.y + 'px';
+            line.style.transform = `rotate(${Math.atan2(nextP.y - p.y, nextP.x - p.x) * 180 / Math.PI}deg)`;
         });
-      }
 
-      solDiv.appendChild(body);
-      contentContainer.appendChild(solDiv);
+        const drawA = (id, A, B, C) => {
+            let el = document.getElementById(id);
+            let angDeg = Math.round(getAngle(A,B,C));
+            el.textContent = angDeg + "°";
 
-      setTimeout(() => {
-        katex.render(eqData.tex, header.querySelector(`#sol-eq-${eqData.id}`), { throwOnError: false });
+            let angB = Math.atan2(B.y - A.y, B.x - A.x);
+            let angC = Math.atan2(C.y - A.y, C.x - A.x);
+            let diff = angC - angB;
 
-        if (eqData.type === 'bhaskara') {
-          katex.render(eqData.sol.delta, body.querySelector(`#sol-delta-${eqData.id}`), { displayMode: true, throwOnError: false });
-          katex.render(eqData.sol.formula, body.querySelector(`#sol-form-${eqData.id}`), { displayMode: true, throwOnError: false });
-          katex.render(eqData.sol.roots, body.querySelector(`#sol-roots-${eqData.id}`), { displayMode: true, throwOnError: false });
-        } else {
-          eqData.sol.steps.forEach((step, idx) => {
-            katex.render(step, body.querySelector(`#sol-step-${eqData.id}-${idx}`), { displayMode: true, throwOnError: false });
-          });
-        }
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            while (diff > Math.PI) diff -= Math.PI * 2;
 
-        contentContainer.scrollTop = contentContainer.scrollHeight;
-      }, 10);
+            ctx.strokeStyle = "#dc2626"; 
+            ctx.fillStyle = "#dc2626";
+            ctx.lineWidth = 2;
+            
+            if (angDeg === 90) {
+                let size = Math.min(18, gridSize * 0.6);
+                let pB = { x: A.x + Math.cos(angB) * size, y: A.y + Math.sin(angB) * size };
+                let pC = { x: A.x + Math.cos(angC) * size, y: A.y + Math.sin(angC) * size };
+                let pCorner = { x: pB.x + (pC.x - A.x), y: pB.y + (pC.y - A.y) };
+                
+                ctx.beginPath();
+                ctx.moveTo(pB.x, pB.y); 
+                ctx.lineTo(pCorner.x, pCorner.y); 
+                ctx.lineTo(pC.x, pC.y);
+                ctx.stroke();
+
+                ctx.beginPath(); 
+                ctx.arc(A.x + (pCorner.x - A.x)*0.5, A.y + (pCorner.y - A.y)*0.5, 1.5, 0, 7); 
+                ctx.fill();
+            } else {
+                let radius = Math.min(22, gridSize * 0.7);
+                ctx.beginPath(); 
+                ctx.arc(A.x, A.y, radius, angB, angB + diff, diff < 0); 
+                ctx.stroke();
+            }
+
+            let midAng = angB + diff / 2;
+            let offset = Math.min(38, gridSize * 1.2);
+            el.style.left = (A.x + Math.cos(midAng) * offset - 10) + 'px';
+            el.style.top = (A.y + Math.sin(midAng) * offset - 10) + 'px';
+        };
+
+        drawA('ang1', p1, p2, p3); 
+        drawA('ang2', p2, p3, p1); 
+        drawA('ang3', p3, p1, p2);
+
+        requestAnimationFrame(updateLoop);
     }
 
-    function unlockNextBlock() {
-      const btnNext = document.getElementById('btn-next');
-      btnNext.disabled = false;
-      btnNext.classList.remove('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
-      btnNext.classList.add('btn-next-active');
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-    }
-
-    function nextBlock() {
-      if (currentBlockIdx < equationBlocks.length - 1) {
-        loadBlock(currentBlockIdx + 1);
-      } else {
-        confetti({ particleCount: 200, spread: 100, origin: { y: 0.4 } });
-        alert('🎉 Parabéns! Você completou todos os 5 blocos do Laboratório de Equações!');
-        loadBlock(0);
-      }
-    }
-
-    function switchMobileTab(tab) {
-      const colBoxes = document.getElementById('col-boxes');
-      const colDeck = document.getElementById('col-deck');
-      const tabDeck = document.getElementById('tab-deck');
-      const tabBoxes = document.getElementById('tab-boxes');
-
-      if (tab === 'deck') {
-        colDeck.classList.remove('hidden');
-        colBoxes.classList.add('hidden');
-        tabDeck.className = 'flex-1 py-2 font-bold text-xs rounded-lg bg-slate-900 text-white shadow-sm';
-        tabBoxes.className = 'flex-1 py-2 font-bold text-xs rounded-lg text-slate-700 hover:bg-slate-300';
-      } else {
-        colBoxes.classList.remove('hidden');
-        colDeck.classList.add('hidden');
-        tabBoxes.className = 'flex-1 py-2 font-bold text-xs rounded-lg bg-slate-900 text-white shadow-sm';
-        tabDeck.className = 'flex-1 py-2 font-bold text-xs rounded-lg text-slate-700 hover:bg-slate-300';
-      }
-    }
-
-    function openGithubModal() {
-      document.getElementById('github-modal').classList.remove('hidden');
-    }
-    function closeGithubModal() {
-      document.getElementById('github-modal').classList.add('hidden');
-    }
-  </script>
+    window.onload = init;
+</script>
 </body>
 </html>
